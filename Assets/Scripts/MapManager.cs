@@ -23,16 +23,12 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    private GameTile[,] gameTiles = null;
+    private GameTile[,] gameTiles;
     [SerializeField] private TileBase originTile = null;
 
     [Header("Tilemap")]
     [SerializeField] Tilemap tilemap;
     [SerializeField] TilemapCollider2D collider;
-    private int minX = 9999;
-    private int maxX = 0;
-    private int minY = 9999;
-    private int maxY = 0;
     Vector2Int matrixOffset = Vector2Int.zero;
 
     [Header("Tiles")]
@@ -93,6 +89,7 @@ public class MapManager : MonoBehaviour
 
     }
 
+    /*
     private void SetMatrixOffset(int xOffset, int yOffset)
     {
         matrixOffset = new Vector2Int(xOffset, yOffset);
@@ -111,6 +108,7 @@ public class MapManager : MonoBehaviour
     {
         return new Vector2Int(coords.x + Mathf.Abs(tilemap.cellBounds.min.x), coords.y + Mathf.Abs(tilemap.cellBounds.min.y));
     }
+    */
 
 
     /// <summary>
@@ -344,9 +342,22 @@ public class MapManager : MonoBehaviour
         Vector2Int centerMatrix = centerTile.GetMatrixCoords();
         Vector3Int centerCubic = MatrixToCubic(centerMatrix);
         List<GameTile> tiles = new List<GameTile>();
-        for (int x = Mathf.Max(centerMatrix.x - range, 0); x <= Mathf.Min(centerMatrix.x + range, gameTiles.GetLength(0) - 1); x++)
+        int indent;
+        for (int y = Mathf.Max(centerMatrix.y - range, 0); y <= Mathf.Min(centerMatrix.y + range, gameTiles.GetLength(1) - 1); y++)
         {
-            for (int y = Mathf.Max(centerMatrix.y - range, 0); y <= Mathf.Min(centerMatrix.y + range, gameTiles.GetLength(1) - 1); y++)
+            if (centerTile.GetMatrixCoords().y % 2 == 0 && y % 2 != 0)
+            {
+                indent =  - 1;
+            }
+            else if (centerTile.GetMatrixCoords().y % 2 != 0 && y % 2 == 0)
+            {
+                indent = 1;
+            }
+            else
+            {
+                indent = 0;
+            }
+            for (int x = Mathf.Max(centerMatrix.x - range, 0) + indent; x <= Mathf.Min(centerMatrix.x + range, gameTiles.GetLength(0) - 1); x++)
             {
                 if (gameTiles[x, y] != null)
                 {
@@ -437,14 +448,14 @@ public class MapManager : MonoBehaviour
 
     private Vector3Int MatrixToCubic(Vector2Int matrixCoords)
     {
-        int q = matrixCoords.x - (matrixCoords.y + (matrixCoords.y & 1)) / 2;
+        int q = matrixCoords.x - (matrixCoords.y - (matrixCoords.y & 1)) / 2;
         int r = matrixCoords.y;
         return new Vector3Int(q, r, -q - r);
     }
 
     private Vector2Int CubicToMatrix(Vector3Int cubicCoords)
     {
-        int x = cubicCoords.x + (cubicCoords.y + (cubicCoords.y & 1)) / 2;
+        int x = cubicCoords.x + (cubicCoords.y - (cubicCoords.y & 1)) / 2;
         int y = cubicCoords.y;
         return new Vector2Int(x, y);
     }
@@ -517,15 +528,19 @@ public class MapManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        tilemap = gameObject.GetComponentInChildren<Tilemap>();
-        //tilemap.SetTile(new Vector3Int(0, 0, 0), originTile);
         BoundsInt bounds = tilemap.cellBounds;
+
+
+        //tilemap.SetTile(new Vector3Int(0, 0, 0), originTile);
         //gameTiles = new GameTile[Mathf.Abs(bounds.min.x) + bounds.max.x, Mathf.Abs(bounds.min.y) + bounds.max.y];
+        /*
         gameTiles = new GameTile[Mathf.Abs(bounds.max.x) + Mathf.Abs(bounds.min.x), Mathf.Abs(bounds.max.y) + Mathf.Abs(bounds.min.y)];
         Debug.LogFormat("gameTiles shape: [{0}, {1}]", gameTiles.GetLength(0), gameTiles.GetLength(1));
         Debug.LogFormat("gameTiles min and max: [{0}, {1}]", bounds.min, bounds.max);
-        Debug.LogFormat("Tilemap bounds: {0}", bounds);
+        */
         //Debug.LogFormat("Tilemap layout: {0}", tilemap.cellLayout);
+
+        /*
         for (int x = bounds.min.x; x < bounds.max.x; x++)
         {
             for (int y = bounds.min.y; y < bounds.max.y; y++)
@@ -536,19 +551,33 @@ public class MapManager : MonoBehaviour
                 if (maxY < y) { maxY = y; }
             }
         }
+        */
 
-        Vector2Int offsetVector = new Vector2Int(0 - bounds.min.x, 0 - bounds.min.y);
+        Vector2Int offsetVector = new Vector2Int(-bounds.min.x, -bounds.min.y);
         int indent;
         // +ve => tile map to tile array
         // -ve => tile array to tile map
         Debug.LogFormat("vector Offset: {0}", offsetVector);
+        gameTiles = new GameTile[bounds.size.x, bounds.size.y];
+        Debug.LogFormat("Tilemap bounds: {0}", bounds);
 
-        gameTiles = new GameTile[maxX + offsetVector.x, maxY + offsetVector.y];
+        /*
+        for ( int x = 0; x < bounds.x; x++ )
+        {
+            for( int y = 0; y < bounds.y; y++ )
+            {
+                if (tilemap.GetTile(new Vector3Int(x, y, TILE_Z))
+            }
+        }
+        */
+
         Debug.LogFormat("gameTiles shape: [{0}, {1}]", gameTiles.GetLength(0), gameTiles.GetLength(1));
         for (int x = 0; x < gameTiles.GetLength(0); x++)
         {
             for (int y = 0; y < gameTiles.GetLength(1); y++)
             {
+                //Debug.LogFormat("Position: [{0}, {1}]", x, y);
+                /*
                 if (y%2 == minY%2)
                 {
                     indent = -1;
@@ -557,15 +586,17 @@ public class MapManager : MonoBehaviour
                 {
                     indent = 0;
                 }
-                Vector3Int tilePos = new Vector3Int(x - offsetVector.x, y - offsetVector.y, TILE_Z);
+                */
+                Vector3Int tilePos = new Vector3Int(x - offsetVector.x, y - offsetVector.y, 0);
                 if (tilemap.HasTile(tilePos))
                 {
+                    Debug.LogFormat("Tile at {0}", new Vector2Int(tilePos.x + offsetVector.x, tilePos.y + offsetVector.y));
                     GameObject overlayTileObj = Instantiate(overlayTilePrefab, overlayContainer.transform);
                     GameTile overlayTile = overlayTileObj.GetComponent<GameTile>();
                     var cellPosition = tilemap.GetCellCenterWorld(tilePos);
                     overlayTile.transform.position = new Vector3(cellPosition.x, cellPosition.y, TILE_Z);
                     //overlayTile.GetComponent<SpriteRenderer>().sortingOrder = tilemap.GetComponent<SpriteRenderer>().sortingOrder;
-                    gameTiles[x + indent, y] = overlayTile;
+                    gameTiles[x, y] = overlayTile;
                     overlayTile.SetUp(new Vector2Int(x, y));
                 }
                 else
@@ -574,8 +605,8 @@ public class MapManager : MonoBehaviour
                 }
             }
         }
-        SetMatrixOffset(offsetVector);
 
+        Debug.LogAssertionFormat("gameTiles == null: {0}", gameTiles == null);
 
         //CreateUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
         //CreateUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
@@ -588,10 +619,22 @@ public class MapManager : MonoBehaviour
 
     public void CreateRandomUnit()
     {
+        Debug.LogAssertionFormat("gameTiles == null: {0}", gameTiles == null);
         GameTile tile = null;
+        if (gameTiles == null)
+        {
+            Debug.LogErrorFormat("Gametiles null");
+        }
+        
         while (tile == null)
         {
-            tile = gameTiles[Random.Range(0, gameTiles.GetLength(0)), Random.Range(0, gameTiles.GetLength(1))];
+            int randx = Random.Range(0, gameTiles.GetLength(0));
+            int randy = Random.Range(0, gameTiles.GetLength(1));
+            if (gameTiles[randx, randy] != null)
+            {
+                tile = gameTiles[randx, randy];
+            }
+            
         }
         Debug.LogFormat("tile: {0}", gameTiles[tile.GetMatrixCoords().x, tile.GetMatrixCoords().y]);
 

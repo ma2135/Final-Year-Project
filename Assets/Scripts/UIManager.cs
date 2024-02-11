@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
+//using TMPro;
 
 public class UIManager : MonoBehaviour
 {
@@ -52,8 +52,8 @@ public class UIManager : MonoBehaviour
             {
                 if (freeCardSlots[i])
                 {
-                    cardSlots[i].transform.GetChild(0).transform.GetChild(0).GetComponent<TMP_Text>().text = card.name;
-                    cardSlots[i].transform.GetChild(0).transform.GetChild(1).GetComponent<TMP_Text>().text = card.cost.ToString();
+                    //cardSlots[i].transform.GetChild(0).transform.GetChild(0).GetComponent<TMP_Text>().text = card.name;
+                    //cardSlots[i].transform.GetChild(0).transform.GetChild(1).GetComponent<TMP_Text>().text = card.cost.ToString();
                     freeCardSlots[i] = false;
                     flag = true;
                     cardSlots[i].SetActive(true);

@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
     {
         allEquipment = new List<EquipmentObject>[] { helmetObjects, armourObjects, shieldObjects, weaponObjects, utilityObjects };
 
-        if (playerParty == null)
+        if (playerParty == null && allParty.Count > 0)
         {
             playerParty = allParty[0];
         }
@@ -70,14 +70,14 @@ public class GameManager : MonoBehaviour
             this.allCardAbilities.Add(ability);
         }
         */
-
+        /*
         CardObject[] allScriptableCards = Resources.LoadAll<CardObject>(CARDSPATH);
-        Debug.LogFormat("allAttributes.length(): {0}", allScriptableCards.Length);
+        Debug.LogAssertionFormat("allScriptableCards.length(): {0}", allScriptableCards.Length);
         foreach (CardObject cardData in allScriptableCards)
         {
             allCards.AddCards(new List<CardObject> { cardData });
         }
-
+        */
     }
 
     public EquipmentObject[] CreateLoadout()
