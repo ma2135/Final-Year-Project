@@ -98,6 +98,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78a317daa071f624b9f6a2ce3a140b10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  matrixCoords: {x: 0, y: 0}
 --- !u!60 &1167190024761584903
 PolygonCollider2D:
   m_ObjectHideFlags: 0

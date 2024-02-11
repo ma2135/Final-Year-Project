@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using static UnityEngine.RuleTile.TilingRuleOutput;
 
+
+[CreateAssetMenu(fileName = "New units", menuName = "Units/Create Unit")]
+
 public class UnitObject : ScriptableObject
 {
     private Unit unit;
@@ -12,7 +15,12 @@ public class UnitObject : ScriptableObject
     Vector2Int matrixCoords;
     int range = 3;
 
-    private void Start()
+    private void Awake()
+    {
+        Setup();
+    }
+
+    private void Setup()
     {
         unitDeck = new DeckObject();
         UpdateCards();
@@ -94,11 +102,4 @@ public class UnitObject : ScriptableObject
 
     public void SetUnit(Unit unit) { this.unit = unit; }
     public Unit GetUnit() { return unit; }
-
-    public void Awake()
-    {
-        UpdateCards();
-    }
-
-
 }

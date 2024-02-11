@@ -39,6 +39,8 @@ public class MapManager : MonoBehaviour
     [SerializeField] GameObject overlayTilePrefab;
     [SerializeField] GameObject overlayContainer;
     [SerializeField] private GameTile selectedTile = null;
+    [SerializeField] private Vector2Int selectedCoords = Vector2Int.zero;
+
     [SerializeField] private UnitObject selectedUnit = null;
     private List<GameTile> highlightedTiles = new List<GameTile>();
     [SerializeField] const int TILE_Z = -1;
@@ -62,7 +64,7 @@ public class MapManager : MonoBehaviour
                 }
                 selectedTile = inputTile;
                 selectedTile.ShowTile();
-                selectedUnit = selectedTile.GetUnit().GetUnitObject();
+                selectedUnit = selectedTile.GetUnit();
             }
             else
             {
@@ -87,7 +89,7 @@ public class MapManager : MonoBehaviour
                 MoveUnit(selectedTile, inputTile);
             }
         }
-        
+        selectedCoords = selectedTile.GetMatrixCoords();
 
     }
 
@@ -105,14 +107,14 @@ public class MapManager : MonoBehaviour
     {
         return new Vector2Int(coords.x - Mathf.Abs(tilemap.cellBounds.min.x), coords.y - Mathf.Abs(tilemap.cellBounds.min.y));
     }
-    public Vector2Int TileToMatrix(Vector2Int coords)
+    public Vector2Int GameToMatrix(Vector2Int coords)
     {
         return new Vector2Int(coords.x + Mathf.Abs(tilemap.cellBounds.min.x), coords.y + Mathf.Abs(tilemap.cellBounds.min.y));
     }
 
 
     /// <summary>
-    /// Creates a unit on the input coordinates
+    /// Creates a unitGame on the input coordinates
     /// </summary>
     /// <param name="matrixCoord"></param>
     public void CreateUnit(Vector2Int matrixCoord)
@@ -132,16 +134,20 @@ public class MapManager : MonoBehaviour
         {
             Debug.LogAssertion(string.Format("Tile {0} already occupied", matrixCoord));
         }
-        GameObject unitObj = Instantiate(unitPrefab, unitContainer.transform);
-        Unit unit = unitObj.GetComponent<Unit>();
-        unit.transform.position = gameTiles[tileCoord.x, tileCoord.y].transform.position;
-        gameTiles[tileCoord.x, tileCoord.y].SetUnit(unit);
+        GameObject unitGame = Instantiate(unitPrefab, unitContainer.transform);
+        Unit unit = unitGame.GetComponent<Unit>();
+        UnitObject unitObj = ScriptableObject.CreateInstance<UnitObject>();
+        unitObj.SetUnit(unitGame.GetComponent<Unit>());
+        unit.SetUnitObject(unitObj);
+        unitObj.MoveUnit(matrixCoord, gameTiles[matrixCoord.x, matrixCoord.y].transform.position);
+        //unitGame.transform.position = gameTiles[tileCoord.x, tileCoord.y].transform.position;
+        gameTiles[matrixCoord.x, matrixCoord.y].SetUnit(unitObj);
     }
 
     #region Unit Movement
     /*
     /// <summary>
-    /// Move the unit on the unitTile to the destinationTile
+    /// Move the unitGame on the unitTile to the destinationTile
     /// </summary>
     /// <param name="unitTile"></param>
     /// <param name="destinationTile"></param>
@@ -154,12 +160,12 @@ public class MapManager : MonoBehaviour
         }
         if (unitTile.GetUnit() == null)
         {
-            Debug.LogError(string.Format("MoveUnit - No unit on tile {0} to move", unitTile.GetMatrixCoords()));
+            Debug.LogError(string.Format("MoveUnit - No unitGame on tile {0} to move", unitTile.GetMatrixCoords()));
             return false;
         }
         if (destinationTile.GetUnit() != null)
         {
-            Debug.LogError(string.Format("MoveUnit - Cannot move unit to destination. Tile {0} is already occupied", destinationTile.GetMatrixCoords()));
+            Debug.LogError(string.Format("MoveUnit - Cannot move unitGame to destination. Tile {0} is already occupied", destinationTile.GetMatrixCoords()));
             return false;
         }
 
@@ -196,7 +202,7 @@ public class MapManager : MonoBehaviour
         GameTile previousTile;
         GameTile currentTile = unitTile;
 
-        int count = Mathf.Min(path.Count, unitTile.GetUnit().GetUnitObject().GetRange());
+        int count = Mathf.Min(path.Count, unitTile.GetUnit().GetRange());
         Debug.LogFormat("Max movement range: {0}", count);
         while (count > 0)
         {
@@ -206,7 +212,7 @@ public class MapManager : MonoBehaviour
 
             currentTile.SetUnit(previousTile.GetUnit());
             previousTile.SetUnit(null);
-            currentTile.GetUnit().GetUnitObject().MoveUnit(currentTile.GetMatrixCoords(), currentTile.transform.position);
+            currentTile.GetUnit().MoveUnit(currentTile.GetMatrixCoords(), currentTile.transform.position);
             Debug.LogFormat("Moving tile from {0} to {1}", previousTile.GetMatrixCoords(), currentTile.GetMatrixCoords());
             count--;
         }
@@ -532,6 +538,7 @@ public class MapManager : MonoBehaviour
         }
 
         Vector2Int offsetVector = new Vector2Int(0 - bounds.min.x, 0 - bounds.min.y);
+        int indent;
         // +ve => tile map to tile array
         // -ve => tile array to tile map
         Debug.LogFormat("vector Offset: {0}", offsetVector);
@@ -542,7 +549,15 @@ public class MapManager : MonoBehaviour
         {
             for (int y = 0; y < gameTiles.GetLength(1); y++)
             {
-                Vector3Int tilePos = new Vector3Int(x - offsetVector.x, y - offsetVector.y, 0);
+                if (y%2 == minY%2)
+                {
+                    indent = -1;
+                }
+                else
+                {
+                    indent = 0;
+                }
+                Vector3Int tilePos = new Vector3Int(x - offsetVector.x, y - offsetVector.y, TILE_Z);
                 if (tilemap.HasTile(tilePos))
                 {
                     GameObject overlayTileObj = Instantiate(overlayTilePrefab, overlayContainer.transform);
@@ -550,7 +565,7 @@ public class MapManager : MonoBehaviour
                     var cellPosition = tilemap.GetCellCenterWorld(tilePos);
                     overlayTile.transform.position = new Vector3(cellPosition.x, cellPosition.y, TILE_Z);
                     //overlayTile.GetComponent<SpriteRenderer>().sortingOrder = tilemap.GetComponent<SpriteRenderer>().sortingOrder;
-                    gameTiles[x, y] = overlayTile;
+                    gameTiles[x + indent, y] = overlayTile;
                     overlayTile.SetUp(new Vector2Int(x, y));
                 }
                 else

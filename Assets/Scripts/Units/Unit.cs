@@ -5,8 +5,6 @@ using UnityEngine;
 
 public class Unit : MonoBehaviour
 {
-
-    [SerializeField] GameObject gameObject;
     [SerializeField] UnitObject unit;
 
     public UnitObject GetUnitObject() { return unit; }

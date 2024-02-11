@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Party", menuName = "Create Party")]
+[CreateAssetMenu(fileName = "New Party", menuName = "Units/Create Party")]
 
 public class Party : ScriptableObject
 {
@@ -13,6 +13,18 @@ public class Party : ScriptableObject
     public void OnValidate()
     {
         UpdateParty();
+    }
+
+    private void Awake()
+    {
+        if (inventory == null)
+        {
+            inventory = CreateInstance<Inventory>();
+        }
+        if (deck == null)
+        {
+            deck = CreateInstance<DeckObject>();
+        }
     }
 
     public void UpdateParty()
