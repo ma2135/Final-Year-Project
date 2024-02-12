@@ -15,7 +15,17 @@ public class Item : MonoBehaviour
     public ItemObject GetItemObject() { return itemData; }
 
     public void SetItemObject(ItemObject item) 
-    { 
+    {
+        if (item == null)
+        {
+            itemImage.gameObject.SetActive(false);
+            itemCount.gameObject.SetActive(false);
+        }
+        else
+        {
+            itemImage.gameObject.SetActive(true);
+            itemCount.gameObject.SetActive(true);
+        }
         itemData = item;
         itemImage.sprite = item.sprite;
         itemCount.text = item.amount.ToString();
@@ -31,16 +41,8 @@ public class Item : MonoBehaviour
 
     public void OnValidate()
     {
-        if (itemData != null)
-        {
-            itemImage.gameObject.SetActive(true);
-            itemCount.gameObject.SetActive(true);
-            SetItemObject(itemData);
-        }
-        else
-        {
-            itemImage.gameObject.SetActive(false);
-            itemCount.gameObject.SetActive(false);
-        }
+        SetItemObject(itemData);
     }
+
+
 }
