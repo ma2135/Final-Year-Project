@@ -448,6 +448,7 @@ public class MapManager : MonoBehaviour
 
     private Vector3Int MatrixToCubic(Vector2Int matrixCoords)
     {
+        // "&1" to get odd or even as works with -ve numbers
         int q = matrixCoords.x - (matrixCoords.y - (matrixCoords.y & 1)) / 2;
         int r = matrixCoords.y;
         return new Vector3Int(q, r, -q - r);
@@ -605,8 +606,6 @@ public class MapManager : MonoBehaviour
                 }
             }
         }
-
-        Debug.LogAssertionFormat("gameTiles == null: {0}", gameTiles == null);
 
         //CreateUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
         //CreateUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));

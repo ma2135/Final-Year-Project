@@ -17,3 +17,4 @@ MonoBehaviour:
   equipmentSlot: 1
   cards:
   - {fileID: 11400000, guid: df7817d3f58ac8943a8702714d30810a, type: 2}
+  amount: 1

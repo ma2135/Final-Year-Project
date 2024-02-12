@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: Bandages
   m_EditorClassIdentifier: 
   itemType: 0
-  equipmentSlots: 
-  restoreAmount: 0
+  sprite: {fileID: 0}
+  equipmentSlot: 4
+  cards: []
+  amount: 2

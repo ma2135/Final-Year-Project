@@ -16,3 +16,4 @@ MonoBehaviour:
   sprite: {fileID: 21300000, guid: 374ebe0ed57485383aa9263f087830dd, type: 3}
   equipmentSlot: 0
   cards: []
+  amount: 1

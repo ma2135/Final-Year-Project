@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-//using TMPro;
+using TMPro;
 
 public class UIManager : MonoBehaviour
 {
@@ -10,6 +10,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Canvas HUDCanvas;
     [SerializeField] private GameObject handObj;
     [SerializeField] private GameObject cardPrefab;
+    [Header("Player's Hand")]
     [SerializeField] private GameObject leftMarker;
     [SerializeField] private GameObject rightMarker;
 
@@ -19,6 +20,12 @@ public class UIManager : MonoBehaviour
     List<GameObject> hand = new List<GameObject>();
     [SerializeField] private GameObject[] cardSlots;
     [SerializeField] private bool[] freeCardSlots;
+
+    [Header("Inventory")]
+    [SerializeField] private Item[] equipSlots;
+    [SerializeField] private GameObject inventoryPanel;
+    [SerializeField] private Item itemPrefab;
+
 
     private void Start()
     {
@@ -52,8 +59,8 @@ public class UIManager : MonoBehaviour
             {
                 if (freeCardSlots[i])
                 {
-                    //cardSlots[i].transform.GetChild(0).transform.GetChild(0).GetComponent<TMP_Text>().text = card.name;
-                    //cardSlots[i].transform.GetChild(0).transform.GetChild(1).GetComponent<TMP_Text>().text = card.cost.ToString();
+                    cardSlots[i].transform.GetChild(0).transform.GetChild(0).GetComponent<TMP_Text>().text = card.name;
+                    cardSlots[i].transform.GetChild(0).transform.GetChild(1).GetComponent<TMP_Text>().text = card.cost.ToString();
                     freeCardSlots[i] = false;
                     flag = true;
                     cardSlots[i].SetActive(true);
@@ -90,6 +97,13 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void DisplayUnit(UnitObject unit)
+    {
+        for (int i = 0; i <= equipSlots.Length; i++ )
+        {
+            equipSlots[i].SetItemObject(unit.GetEquipment()[i]);
+        }
+    }
 
     // Update is called once per frame
     void Update()
