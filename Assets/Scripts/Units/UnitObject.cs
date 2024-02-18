@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using static UnityEngine.RuleTile.TilingRuleOutput;
 
 
@@ -9,7 +10,7 @@ using static UnityEngine.RuleTile.TilingRuleOutput;
 public class UnitObject : ScriptableObject
 {
     private Unit unit;
-
+    [SerializeField] private Sprite unitSprite;
     [SerializeField] EquipmentObject[] equipedItems = new EquipmentObject[5];
     [SerializeField] DeckObject unitDeck;
     Vector2Int matrixCoords;
@@ -18,6 +19,15 @@ public class UnitObject : ScriptableObject
     private void Awake()
     {
         Setup();
+    }
+
+    private void OnValidate()
+    {
+        if (unit != null)
+        {
+            unit.GetComponent<SpriteRenderer>().sprite = unitSprite;
+        }
+        
     }
 
     private void Setup()
@@ -39,13 +49,21 @@ public class UnitObject : ScriptableObject
 
     }
 
-    public EquipmentObject EquipItem(EquipmentObject equipment, int itemLocation)
+    public EquipmentObject EquipItem(EquipmentObject equipment, EquipmentSlot itemLocation)
     {
-        EquipmentObject oldItem = equipedItems[itemLocation];
-        equipedItems[itemLocation] = equipment;
+        EquipmentObject oldItem = equipedItems[(int)itemLocation];
+        equipedItems[(int)itemLocation] = equipment;
         return oldItem;
     }
 
+    public Sprite GetUnitSprite()
+    {
+        return unitSprite;
+    }
+    public void SetUnitSprite(Sprite sprite)
+    {
+        unitSprite = sprite;
+    }
 
     public void SetUp(Vector2Int coords)
     {

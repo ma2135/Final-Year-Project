@@ -6,12 +6,12 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Inventory", menuName = "Inventory/Create Inventory")]
 public class Inventory : ScriptableObject
 {
-    [SerializeField] private List<ItemSlot> slots = new List<ItemSlot>();
+    [SerializeField] private List<InvItemSlot> slots = new List<InvItemSlot>();
 
     public void AddItem(ItemObject item, int amount)
     {
         bool flag = false;
-        foreach (ItemSlot slot in slots)
+        foreach (InvItemSlot slot in slots)
         {
             if (slot.GetItem() == item)
             {
@@ -22,11 +22,11 @@ public class Inventory : ScriptableObject
         }
         if (!flag)
         {
-            slots.Add(new ItemSlot(item, 1));
+            slots.Add(new InvItemSlot(item, 1));
         }
     }
 
-    public ItemSlot[] GetItems()
+    public InvItemSlot[] GetItems()
     {
         return slots.ToArray();
     }
@@ -34,7 +34,7 @@ public class Inventory : ScriptableObject
 
     public void AddInventory(Inventory inventory)
     {
-        foreach (ItemSlot slot in inventory.GetItems())
+        foreach (InvItemSlot slot in inventory.GetItems())
         {
             slots.Add(slot);
         }
@@ -42,12 +42,12 @@ public class Inventory : ScriptableObject
 }
 
 [System.Serializable]
-public class ItemSlot
+public class InvItemSlot
 {
     [SerializeField] ItemObject item;
     [SerializeField] int amount = 1;
 
-    public ItemSlot(ItemObject item, int amount)
+    public InvItemSlot(ItemObject item, int amount)
     {
         this.item = item;
         this.amount = amount;

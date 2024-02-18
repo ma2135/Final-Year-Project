@@ -2,47 +2,64 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+using UnityEngine.EventSystems;
 
-
-//What is interacted with by the user
-public class Item : MonoBehaviour
+public class Item : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    [SerializeField] ItemObject itemData = null;
-    [SerializeField] Image itemImage;
-    [SerializeField] TMP_Text itemCount;
+    //represents an item in an inventory
+    //For physical item interactions
+    //To be draggend-and-dropped and clicked to move
 
-    public ItemObject GetItemObject() { return itemData; }
-
-    public void SetItemObject(ItemObject item) 
-    {
-        if (item == null)
-        {
-            itemImage.gameObject.SetActive(false);
-            itemCount.gameObject.SetActive(false);
-        }
-        else
-        {
-            itemImage.gameObject.SetActive(true);
-            itemCount.gameObject.SetActive(true);
-        }
-        itemData = item;
-        itemImage.sprite = item.sprite;
-        itemCount.text = item.amount.ToString();
-        if (item.amount == 1 || item.amount == 0)
-        {
-            itemCount.gameObject.SetActive(false);
-        }
-        else
-        {
-            itemCount.gameObject.SetActive(true);
-        }
-    }
+    [SerializeField] private ItemSlot slot;
+    [HideInInspector] public Transform parentAfterDrag;
+    public Image image;
 
     public void OnValidate()
     {
-        SetItemObject(itemData);
+        image = transform.GetComponent<Image>();
+        //slot = transform.parent.GetComponent<ItemSlot>();
+        if (slot != null )
+        {
+            GetComponent<Image>().sprite = slot.GetSprite();
+        }
+        
     }
 
+    public ItemSlot GetItemSlot()
+    {
+        return slot;
+    }
 
+    public void SetItemSlot(ItemSlot slot)
+    {
+        this.slot = slot;
+        transform.parent = slot.transform;
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        Debug.Log("Start drag");
+        parentAfterDrag = slot.transform;
+        transform.parent = transform.root;
+        transform.SetAsLastSibling();
+        image.raycastTarget = false;
+
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        Debug.Log("Dragging");
+        if (slot.GetItemObject() != null)
+        {
+            transform.position = Input.mousePosition;
+        }
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        Debug.Log("End drag");
+        transform.SetParent(parentAfterDrag);
+        transform.position = slot.transform.position;
+        image.raycastTarget = true;
+    }
 }

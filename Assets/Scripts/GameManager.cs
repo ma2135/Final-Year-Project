@@ -6,6 +6,8 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager gameManager;
+
     [SerializeField] public static int cardIdCount;
     [SerializeField] GameObject deckContainer;
     [SerializeField] GameObject deckPrefab;
@@ -39,6 +41,7 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
+        gameManager = this;
         allEquipment = new List<EquipmentObject>[] { helmetObjects, armourObjects, shieldObjects, weaponObjects, utilityObjects };
 
         if (playerParty == null && allParty.Count > 0)
@@ -49,36 +52,18 @@ public class GameManager : MonoBehaviour
         {
             allParty.Add(playerParty);
         }
-        /*
-        foreach (DeckObject deck in allDecks)
-        {
-            deck.LoadDeck();
-        }*/
-
-        /*
-        Attribute[] allAtributes = Resources.LoadAll<Attribute>(ATTRIBUTEPATH);
-        Debug.LogFormat("allAttributes.length(): {0}", allAtributes.Length);
-        foreach (Attribute attribute in allAtributes)
-        {
-            this.allAtributes.Add(attribute);
-        }
-
-        OldCardAbility[] allCardAbilities = Resources.LoadAll<OldCardAbility>(CARDABILITIESPATH);
-        Debug.LogFormat("allAttributes.length(): {0}", allAtributes.Length);
-        foreach (OldCardAbility ability in allCardAbilities)
-        {
-            this.allCardAbilities.Add(ability);
-        }
-        */
-        /*
-        CardObject[] allScriptableCards = Resources.LoadAll<CardObject>(CARDSPATH);
-        Debug.LogAssertionFormat("allScriptableCards.length(): {0}", allScriptableCards.Length);
-        foreach (CardObject cardData in allScriptableCards)
-        {
-            allCards.AddCards(new List<CardObject> { cardData });
-        }
-        */
     }
+
+    public Party GetPlayerParty()
+    {
+        return playerParty;
+    }
+
+    public void EquipItemToUnit(EquipmentObject item, UnitObject unit, EquipmentSlot itemLocation)
+    {
+        unit.EquipItem(item, itemLocation);
+    }
+
 
     public EquipmentObject[] CreateLoadout()
     {

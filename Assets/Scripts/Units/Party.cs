@@ -9,6 +9,7 @@ public class Party : ScriptableObject
     [SerializeField] private List<UnitObject> unitList = new List<UnitObject>();
     [SerializeField] private Inventory inventory;
     [SerializeField] private DeckObject deck;
+    public int size = 0;
 
     public void OnValidate()
     {
@@ -29,6 +30,7 @@ public class Party : ScriptableObject
 
     public void UpdateParty()
     {
+        size = unitList.Count;
         UpdateInventory();
         UpdateDeck();
     }
@@ -69,5 +71,12 @@ public class Party : ScriptableObject
         }
     }
 
-
+    public UnitObject GetUnit(int index)
+    {
+        return unitList[index];
+    }
+    public List<UnitObject> GetAllUnits()
+    {
+        return unitList;
+    }
 }

@@ -1,11 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class UIManager : MonoBehaviour
 {
-    [SerializeField] GameManager gameManager;
+    public static UIManager uiManager;
 
     [SerializeField] private Canvas HUDCanvas;
     [SerializeField] private GameObject handObj;
@@ -22,13 +23,20 @@ public class UIManager : MonoBehaviour
     [SerializeField] private bool[] freeCardSlots;
 
     [Header("Inventory")]
-    [SerializeField] private Item[] equipSlots;
+    [SerializeField] private ItemSlot[] equipSlots;
     [SerializeField] private GameObject inventoryPanel;
-    [SerializeField] private Item itemPrefab;
+    [SerializeField] private ItemSlot[] inventorySlots;
+    [SerializeField] private ItemSlot itemPrefab;
+    [HideInInspector] public UnitObject currentUnit;
+    [SerializeField] private Image unitImage = null;
+    private Party displayParty = null;
+    private int unitIndex = 0;
+
 
 
     private void Start()
     {
+        uiManager = this;
         freeCardSlots = new bool[maxHandSize];
         for (int i = 0; i < freeCardSlots.Length; i++) 
         { 
@@ -40,19 +48,19 @@ public class UIManager : MonoBehaviour
 
     public void DrawCard()
     {
-        if (gameManager == null)
+        if (GameManager.gameManager == null)
         {
             return;
         }
-        if (gameManager.GetPlayerDeckSize() < 1)
+        if (GameManager.gameManager.GetPlayerDeckSize() < 1)
         {
-            Debug.LogAssertionFormat("Deck size: {0}", gameManager.GetPlayerDeckSize());
+            Debug.LogAssertionFormat("Deck size: {0}", GameManager.gameManager.GetPlayerDeckSize());
             return;
         }
         if (currHandSize < maxHandSize - 1)
         {
             //should only ever draw 1 card
-            CardObject card = gameManager.GetTopDeck(null);
+            CardObject card = GameManager.gameManager.GetTopDeck(null);
 
             bool flag = false;
             for (int i = 0; i < cardSlots.Length; i++)
@@ -71,39 +79,51 @@ public class UIManager : MonoBehaviour
             {
                 Debug.LogAssertionFormat("All card slots used");
             }
-
-
-            /*
-            float left = leftMarker.transform.position.x;
-            float right = rightMarker.transform.position.x;
-            float middle = (rightMarker.transform.position.x - leftMarker.transform.position.x) / 2;
-
-            float step = middle / maxHandSize;
-            left = middle - (step * currHandSize)/2;
-
-            Debug.LogFormat("left: {0}", leftMarker.transform.position.x);
-            Debug.LogFormat("right: {0}", right);
-            Debug.LogFormat("middle: {0}", middle);
-            Debug.LogFormat("step: {0}", step);
-
-            for (int i = 1; i <= currHandSize - 1; i++)
-            {
-                Debug.Log(left + (step * i));
-                hand[i].transform.position = new Vector3(left + (step * i), hand[i].transform.position.y);
-            }
-            */
-
-
         }
+    }
+
+    public void DisplayInventory()
+    {
+        displayParty = GameManager.gameManager.GetPlayerParty();
+        unitIndex = 0;
+        if (displayParty.size !> 0)
+        {
+            Debug.LogAssertionFormat("Plater party size: {0}", displayParty.size);
+        }
+        else
+        {
+            DisplayUnit(displayParty.GetUnit(0));
+        }
+    }
+    public void CycleUnitUp()
+    {
+        unitIndex += 1;
+        if (unitIndex > displayParty.size)
+        {
+            unitIndex = 0;
+        }
+        DisplayUnit(displayParty.GetUnit(unitIndex));
+    }
+    public void CycleUnitDown()
+    {
+        unitIndex -= 1;
+        if (unitIndex > 0)
+        {
+            unitIndex = displayParty.size;
+        }
+        DisplayUnit(displayParty.GetUnit(unitIndex));
     }
 
     public void DisplayUnit(UnitObject unit)
     {
+        currentUnit = unit;
         for (int i = 0; i <= equipSlots.Length; i++ )
         {
             equipSlots[i].SetItemObject(unit.GetEquipment()[i]);
         }
+        unitImage.sprite = unit.GetUnitSprite();
     }
+
 
     // Update is called once per frame
     void Update()
