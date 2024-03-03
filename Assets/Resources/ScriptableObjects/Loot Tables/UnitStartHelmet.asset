@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9834e13aed7e3a24c80f13a0ce54b7fe, type: 3}
+  m_Name: UnitStartHelmet
+  m_EditorClassIdentifier: 
+  probabilities:
+  - 60
+  - 10
+  - 30
+  items:
+  - {fileID: 11400000, guid: 42f0ae64655b99c4cbc76f556cacbf54, type: 2}
+  - {fileID: 11400000, guid: 281b6198881a0f14b94ad5205d62912c, type: 2}
+  - {fileID: 11400000, guid: 2ffc8044d8aadfb43be48dd3a328c6ea, type: 2}
+  totalProbability: 100

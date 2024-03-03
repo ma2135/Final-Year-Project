@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: Shield
   m_EditorClassIdentifier: 
   itemType: 1
-  sprite: {fileID: 0}
+  sprite: {fileID: 21300000, guid: aac570dfc486dfb2f8fb45155674076f, type: 3}
   equipmentSlot: 2
   cards:
-  - {fileID: 11400000, guid: 651818cd90157fd4b8847224d180496d, type: 2}
   - {fileID: 11400000, guid: 651818cd90157fd4b8847224d180496d, type: 2}
   amount: 1

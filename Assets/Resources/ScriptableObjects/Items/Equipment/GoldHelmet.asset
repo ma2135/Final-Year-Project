@@ -9,13 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0893d55369e6ff4bb61267296729346, type: 3}
-  m_Name: Unit
+  m_Script: {fileID: 11500000, guid: e9dce829e119c774988395da729c1e43, type: 3}
+  m_Name: GoldHelmet
   m_EditorClassIdentifier: 
-  equipedItems:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  unitDeck: {fileID: 0}
+  itemType: 1
+  sprite: {fileID: 21300000, guid: 7b2a7b91c5f8aa7329710f0f3445de44, type: 3}
+  equipmentSlot: 0
+  cards: []
+  amount: 0

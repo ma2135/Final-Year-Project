@@ -14,6 +14,7 @@ public class CardObject : ScriptableObject
     public string cardName;
     public string description;
     public int cost;
+    public int range = 1;
 
     protected void Awake()
     {
@@ -44,6 +45,17 @@ public class CardObject : ScriptableObject
     public void SetId(int id)
     {
         this.id = id;
+    }
+
+    protected void PlayCard()
+    {
+        Debug.Log("Card played - CardObject");
+        EncounterManager.encounterManager.PlayCard(this);
+    }
+
+    protected void PlayCardEffect()
+    {
+        Debug.Log("Activating card effect - CardObject");
     }
 
 }

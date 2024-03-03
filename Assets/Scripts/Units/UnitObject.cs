@@ -10,15 +10,16 @@ using static UnityEngine.RuleTile.TilingRuleOutput;
 public class UnitObject : ScriptableObject
 {
     private Unit unit;
+    [SerializeField] public bool playerUnit = false;
     [SerializeField] private Sprite unitSprite;
-    [SerializeField] EquipmentObject[] equipedItems = new EquipmentObject[5];
-    [SerializeField] DeckObject unitDeck;
+    [SerializeField] private EquipmentObject[] equipedItems = new EquipmentObject[5];
+    //[SerializeField] DeckObject unitDeck;
     Vector2Int matrixCoords;
     int range = 3;
 
     private void Awake()
     {
-        Setup();
+        //Setup();
     }
 
     private void OnValidate()
@@ -32,8 +33,8 @@ public class UnitObject : ScriptableObject
 
     private void Setup()
     {
-        unitDeck = new DeckObject();
-        UpdateCards();
+        //unitDeck = new DeckObject();
+        //UpdateCards();
     }
 
     public void EquipUnit(EquipmentObject[] equipment)
@@ -43,10 +44,13 @@ public class UnitObject : ScriptableObject
             Debug.LogErrorFormat("New unit's equipment array length is incorrect: {0}", equipment.Length);
             return;
         }
-        equipedItems = new EquipmentObject[] { equipment[0], equipment[1], equipment[2], equipment[3], equipment[4] };
-        unitDeck = new DeckObject();
-        UpdateCards();
-
+        for (int i = 0; i < equipment.Length; i++)
+        {
+            Debug.LogFormat("Equipping {0} to unit", equipment[i].name);
+            this.equipedItems[i] = equipment[i];
+        }
+        //unitDeck = new DeckObject();
+        //UpdateCards();
     }
 
     public EquipmentObject EquipItem(EquipmentObject equipment, EquipmentSlot itemLocation)
@@ -94,9 +98,13 @@ public class UnitObject : ScriptableObject
 
     public EquipmentObject[] GetEquipment()
     {
+        if (equipedItems == null)
+        {
+            Debug.LogAssertion("Trying to get null equipment list from a unit");
+        } 
         return equipedItems;
     }
-
+    /*
     private void UpdateCards()
     {
         if (unitDeck == null)
@@ -104,19 +112,27 @@ public class UnitObject : ScriptableObject
             unitDeck = new DeckObject();
         }
         unitDeck.ClearDeck();
-        foreach (var item in equipedItems)
+        foreach (EquipmentObject item in equipedItems)
         {
             if (item != null)
             {
+                Debug.LogFormat("Adding cards from {0} to deck: {1}", item, item.GetCards().ToString());
+                foreach (CardObject card in item.GetCards())
+                {
+                    Debug.LogFormat("Adding {0} to hand", card.name);
+                }
                 unitDeck.AddCards(item.GetCards());
             }
         }
+        Debug.LogAssertionFormat("unit decksize: {0}", unitDeck.GetDeckSize());
     }
-
+    */
+    /*
     public DeckObject GetUnitDeck()
     {
         return unitDeck;
     }
+    */
 
     public void SetUnit(Unit unit) { this.unit = unit; }
     public Unit GetUnit() { return unit; }

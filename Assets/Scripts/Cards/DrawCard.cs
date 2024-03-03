@@ -21,4 +21,12 @@ public class DrawCard : CardObject
     }
 
     public int GetDrawAmount() { return drawAmount; }
+
+    new public void PlayCardEffect()
+    {
+        for (int i = 0; i < drawAmount; i++)
+        {
+            EncounterManager.encounterManager.PlayCard(this);
+        }
+    }
 }

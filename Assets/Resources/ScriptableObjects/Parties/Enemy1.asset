@@ -10,10 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a95c7103f17af5438dd117b9c1e39e8, type: 3}
-  m_Name: New Party
+  m_Name: Enemy1
   m_EditorClassIdentifier: 
   unitList:
-  - {fileID: 11400000, guid: 396081fe67a88a64c91909c7ec71180c, type: 2}
-  - {fileID: 11400000, guid: 6c09607cdb17a554880e7240a4f03a9a, type: 2}
+  - {fileID: 11400000, guid: 6138712d763f84242818c6644301e57d, type: 2}
+  - {fileID: 11400000, guid: c10e479951ac20c4dbc48236330337b6, type: 2}
+  - {fileID: 11400000, guid: c1a6cb55e40b79c4296391623d72ca27, type: 2}
   inventory: {fileID: 0}
   deck: {fileID: 0}
+  deckSize: 11
+  size: 3

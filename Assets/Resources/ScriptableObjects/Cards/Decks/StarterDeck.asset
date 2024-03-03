@@ -12,7 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 651dbbbbe116e6048b0b78954d7b216e, type: 3}
   m_Name: StarterDeck
   m_EditorClassIdentifier: 
-  cardList:
-  - {fileID: 11400000, guid: d050ee5f6375c08409889603c24143f3, type: 2}
-  - {fileID: 11400000, guid: eccb4d549fec20a4399010725fb8d4d5, type: 2}
-  queueSize: 2
+  cardList: []
+  queueSize: 0

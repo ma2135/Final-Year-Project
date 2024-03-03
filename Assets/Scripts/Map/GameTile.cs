@@ -33,9 +33,9 @@ public class GameTile : MonoBehaviour
         Color colour = gameObject.GetComponent<SpriteRenderer>().color;
         gameObject.GetComponent<SpriteRenderer>().color = new Color(colour.r, colour.g, colour.b, 0);
     }
-    public void ShowTile()
+    public void ShowTile(Color colour)
     {
-        Color colour = gameObject.GetComponent<SpriteRenderer>().color;
+        //Color colour = gameObject.GetComponent<SpriteRenderer>().color;
         gameObject.GetComponent<SpriteRenderer>().color = new Color(colour.r, colour.g, colour.b, 0.5f);
     }
 

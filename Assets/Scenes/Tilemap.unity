@@ -6361,7 +6361,7 @@ GameObject:
   - component: {fileID: 635572361}
   - component: {fileID: 635572362}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6400,14 +6400,15 @@ MonoBehaviour:
   cardPrefab: {fileID: 1596842637}
   allCards: {fileID: 0}
   allCardsDeckObj: {fileID: 1218250053}
-  allParty: []
-  playerDeck: {fileID: 11400000, guid: b71b95657fd2c3e418ab1a7ea89f4fa6, type: 2}
-  playerParty: {fileID: 11400000, guid: 38157cd1b9f093b4b81c15c6d98e3188, type: 2}
-  armourObjects: []
-  helmetObjects: []
-  shieldObjects: []
-  weaponObjects: []
-  utilityObjects: []
+  allParty:
+  - {fileID: 11400000, guid: bd38fe2c52a9d4a4e9a79c83b9d934c7, type: 2}
+  playerDeck: {fileID: 0}
+  playerParty: {fileID: 11400000, guid: bd38fe2c52a9d4a4e9a79c83b9d934c7, type: 2}
+  startArmourObjects: {fileID: 11400000, guid: b7b5fd14e2c70ca44bf6e840b0f676d8, type: 2}
+  startHelmetObjects: {fileID: 11400000, guid: 5f9d2ebd025dee54cb8223f30e125119, type: 2}
+  startShieldObjects: {fileID: 11400000, guid: 7612d80520d37354882c2adb5ac4f089, type: 2}
+  startWeaponObjects: {fileID: 11400000, guid: 0ac9a36d2f4c56349abe1d3ca6455740, type: 2}
+  startUtilityObjects: {fileID: 11400000, guid: 478bca6961f3d024db9a648e3bcc854f, type: 2}
 --- !u!1001 &651434810
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18572,67 +18573,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72b3e80d9ff886342bad4999fc9edaa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1001 &2077286115
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 1.498
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.728
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3353714003161214471, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7544445797088143050, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: unit
-      value: 
-      objectReference: {fileID: 11400000, guid: 396081fe67a88a64c91909c7ec71180c, type: 2}
-    - target: {fileID: 8416919387174856960, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
-      propertyPath: m_Name
-      value: UnitPrefab
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
 --- !u!1 &2092909302
 GameObject:
   m_ObjectHideFlags: 0
@@ -19298,4 +19238,3 @@ SceneRoots:
   - {fileID: 1274892684}
   - {fileID: 1249070985}
   - {fileID: 1910339020}
-  - {fileID: 2077286115}

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class Card : MonoBehaviour
 {
@@ -9,12 +10,21 @@ public class Card : MonoBehaviour
     [SerializeField] private int dataId;
     [SerializeField] private new string name;
 
+    [SerializeField] private TMP_Text nameTxt;
+    [SerializeField] private TMP_Text costTxt;
+    [SerializeField] private TMP_Text rangeTxt;
+    [SerializeField] private TMP_Text descriptionTxt;
+
     public void SetUp(int id, CardObject cardData)
     {
         dataId = id;
         this.cardData = cardData;
-        name = cardData.name;
+        name = cardData.cardName;
         cardData.SetCard(this);
+        nameTxt.text = name;
+        costTxt.text = cardData.cost.ToString();
+        rangeTxt.text = cardData.range.ToString();
+        descriptionTxt.text = cardData.description.ToString();
     }
 
     public void SetCardData(CardObject cardData)

@@ -46,21 +46,21 @@ public class UIManager : MonoBehaviour
     }
 
 
-    public void DrawCard()
+    public IEnumerator DrawCard(DeckObject deck)
     {
         if (GameManager.gameManager == null)
         {
-            return;
+            yield break;
         }
-        if (GameManager.gameManager.GetPlayerDeckSize() < 1)
+        if (deck.GetDeckSize() < 1)
         {
-            Debug.LogAssertionFormat("Deck size: {0}", GameManager.gameManager.GetPlayerDeckSize());
-            return;
+            Debug.LogAssertionFormat("Deck size: {0}", deck.GetDeckSize());
+            yield break;
         }
         if (currHandSize < maxHandSize - 1)
         {
             //should only ever draw 1 card
-            CardObject card = GameManager.gameManager.GetTopDeck(null);
+            CardObject card = deck.GetXCards(1)[0];
 
             bool flag = false;
             for (int i = 0; i < cardSlots.Length; i++)
@@ -82,13 +82,30 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public IEnumerator DrawStartingHand(DeckObject deck, int handSize)
+    {
+        int cardsDrawn = 0;
+        while (cardsDrawn < handSize)
+        {
+            StartCoroutine(DrawCard(deck));
+            cardsDrawn++;
+        }
+        yield break;
+    }
+
+    public void StartEncounter()
+    {
+        EncounterManager.encounterManager.StartEncounter();
+    }
+
+
     public void DisplayInventory()
     {
         displayParty = GameManager.gameManager.GetPlayerParty();
         unitIndex = 0;
         if (displayParty.size !> 0)
         {
-            Debug.LogAssertionFormat("Plater party size: {0}", displayParty.size);
+            Debug.LogAssertionFormat("Player party size: {0}", displayParty.size);
         }
         else
         {

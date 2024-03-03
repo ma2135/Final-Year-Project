@@ -69,7 +69,7 @@ public class MouseController : MonoBehaviour
         if (tileHit.HasValue && tileHit.Value.collider != null)
         {
             //Debug.Log(tileHit.Value.collider.gameObject.name);
-            MapManager.mapManager.TileClicked(tileHit.Value.collider.gameObject.GetComponent<GameTile>(), true);
+            MapManager.mapManager.TileClicked(tileHit.Value.collider.gameObject.GetComponent<GameTile>(), true, false);
         }
         
     }
@@ -86,7 +86,7 @@ public class MouseController : MonoBehaviour
         if (tileHit.HasValue && tileHit.Value.collider != null)
         {
             //Debug.Log(tileHit.Value.collider.gameObject.name);
-            MapManager.mapManager.TileClicked(tileHit.Value.collider.gameObject.GetComponent<GameTile>(), false);
+            MapManager.mapManager.TileClicked(tileHit.Value.collider.gameObject.GetComponent<GameTile>(), false, false);
         }
 
     }

@@ -7,6 +7,7 @@ using UnityEngine;
 public class DefenceCard : CardObject
 {
     [SerializeField] private int defence;
+
     private new void Awake()
     {
         {
@@ -17,5 +18,10 @@ public class DefenceCard : CardObject
             }
         }
         ability = CardAbility.Defence;
+    }
+    new public void PlayCardEffect()
+    {
+        // select unit within range
+        // that unit gains armour (temporary health)
     }
 }

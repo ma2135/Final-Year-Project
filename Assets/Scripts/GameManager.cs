@@ -9,8 +9,8 @@ public class GameManager : MonoBehaviour
     public static GameManager gameManager;
 
     [SerializeField] public static int cardIdCount;
-    [SerializeField] GameObject deckContainer;
-    [SerializeField] GameObject deckPrefab;
+    //[SerializeField] GameObject deckContainer;
+    //[SerializeField] GameObject deckPrefab;
     [SerializeField] GameObject cardPrefab;
 
     //https://www.youtube.com/watch?v=u3YdlUW1nx0&ab_channel=SasquatchBStudios
@@ -21,37 +21,44 @@ public class GameManager : MonoBehaviour
     //[SerializeField] List<Attribute> allAtributes = new List<Attribute>();
 
     [Header("General")]
-    [SerializeField] DeckObject allCards;
-    [SerializeField] GameObject allCardsDeckObj;
-    [SerializeField] List<Party> allParty = new List<Party>();
+    [SerializeField] List<Party> enemyParties = new List<Party>();
 
     [Header("Player")]
-    [SerializeField] DeckObject playerDeck;
     [SerializeField] Party playerParty = null;
+    public int playerDrawSize = 5;
 
     [Header("Items")]
-    [SerializeField] private List<EquipmentObject> armourObjects;
-    [SerializeField] private List<EquipmentObject> helmetObjects;
-    [SerializeField] private List<EquipmentObject> shieldObjects;
-    [SerializeField] private List<EquipmentObject> weaponObjects;
-    [SerializeField] private List<EquipmentObject> utilityObjects;
-
-    [SerializeField] private static List<EquipmentObject>[] allEquipment;
+    [SerializeField] private LootTableObject startArmourObjects;
+    [SerializeField] private LootTableObject startHelmetObjects;
+    [SerializeField] private LootTableObject startShieldObjects;
+    [SerializeField] private LootTableObject startWeaponObjects;
+    [SerializeField] private LootTableObject startUtilityObjects;
 
     // Start is called before the first frame update
     private void Start()
     {
-        gameManager = this;
-        allEquipment = new List<EquipmentObject>[] { helmetObjects, armourObjects, shieldObjects, weaponObjects, utilityObjects };
+        gameManager = this;// transform.GetComponent<GameManager>();
 
-        if (playerParty == null && allParty.Count > 0)
+        if (playerParty == null)
         {
-            playerParty = allParty[0];
+            Debug.LogErrorFormat("Player party is null");
         }
-        if (!allParty.Contains(playerParty))
+        else
         {
-            allParty.Add(playerParty);
+            foreach (UnitObject unit in playerParty.GetAllUnits())
+            {
+                unit.playerUnit = true; ;
+            }
         }
+        if (enemyParties.Count == 0)
+        {
+            Debug.LogErrorFormat("enemyParties is empty: {0}", enemyParties.Count);
+        }
+
+        foreach (Party party in enemyParties)
+        {
+            party.SetUp();
+}
     }
 
     public Party GetPlayerParty()
@@ -59,9 +66,46 @@ public class GameManager : MonoBehaviour
         return playerParty;
     }
 
+    public Party GetRandomParty()
+    {
+        int randEnemy = (int)Mathf.Round(Random.Range(0, enemyParties.Count));
+        Debug.LogFormat("enemy Parties size: {0},  {1} selected", enemyParties.Count, randEnemy);
+        return enemyParties[randEnemy];
+    }
+
+
     public void EquipItemToUnit(EquipmentObject item, UnitObject unit, EquipmentSlot itemLocation)
     {
         unit.EquipItem(item, itemLocation);
+    }
+
+
+    public void EquipUnitStart(UnitObject unit)
+    {
+        Debug.Log("Getting starting equipment");
+        EquipmentObject[] equipment = new EquipmentObject[5];
+        for (int i = 0; i < equipment.Length; i++)
+        {
+            switch (i)
+            {
+                case 0:
+                    equipment[i] = (EquipmentObject)startHelmetObjects.RollTable();
+                    break;
+                case 1:
+                    equipment[i] = (EquipmentObject)startArmourObjects.RollTable();
+                    break;
+                case 2:
+                    equipment[i] = (EquipmentObject)startShieldObjects.RollTable();
+                    break;
+                case 3:
+                    equipment[i] = (EquipmentObject)startWeaponObjects.RollTable();
+                    break;
+                case 4:
+                    equipment[i] = (EquipmentObject)startUtilityObjects.RollTable();
+                    break;
+            }
+        }
+        unit.EquipUnit(equipment);
     }
 
 
@@ -75,31 +119,19 @@ public class GameManager : MonoBehaviour
     {
         if (deck == null)
         {
-            deck = playerDeck;
+            deck = playerParty.GetDeck();
         }
-        List<CardObject> list = playerDeck.GetXCards(1);
+        List<CardObject> list = playerParty.GetDeck().GetXCards(1);
         if (list.Count != 1)
         {
-            Debug.LogAssertionFormat("Top Decked card amount != 1: {0}", list.Count);
+            Debug.LogFormat("Top Decked card amount != 1: {0}", list.Count);
             foreach (CardObject card in list)
             {
-                Debug.LogAssertionFormat("card: {0}", card.cardName);
+                Debug.LogFormat("card: {0}", card.cardName);
             }
         }
         return list[0];
     }
-
-    public int GetPlayerDeckSize()
-    {
-        return playerDeck.GetDeckSize();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
 
 
 }

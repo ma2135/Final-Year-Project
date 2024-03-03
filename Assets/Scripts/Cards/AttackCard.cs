@@ -8,7 +8,6 @@ public class AttackCard : CardObject
 {
 
     [SerializeField] int attackDamage;
-    public int range;
 
     private new void Awake()
     {
@@ -30,4 +29,16 @@ public class AttackCard : CardObject
     public void SetDamage(int damage) { attackDamage = damage; }
 
     public int GetDamage() { return attackDamage;}
+
+    new public void PlayCardEffect()
+    {
+
+
+
+
+        // select friendly unit
+        // select enemy unit
+        // do damage to enemy unit
+    }
+
 }

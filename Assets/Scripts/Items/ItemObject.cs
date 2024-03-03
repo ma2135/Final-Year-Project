@@ -11,7 +11,7 @@ public abstract class ItemObject : ScriptableObject
     [SerializeField] public Sprite sprite;
     [SerializeField] public EquipmentSlot equipmentSlot;
     [SerializeField] protected List<CardObject> cards;
-    [SerializeField] public int amount;
+    [SerializeField] public int amount = 1;
 
     public ItemType GetItemType() { return itemType; }
 

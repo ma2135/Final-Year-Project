@@ -1,4 +1,5 @@
 using JetBrains.Annotations;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -37,7 +38,7 @@ public class MapManager : MonoBehaviour
     [SerializeField] private GameTile selectedTile = null;
     [SerializeField] private Vector2Int selectedCoords = Vector2Int.zero;
 
-    [SerializeField] private UnitObject selectedUnit = null;
+    [SerializeField] public UnitObject selectedUnit = null;
     private List<GameTile> highlightedTiles = new List<GameTile>();
     [SerializeField] const int TILE_Z = -1;
 
@@ -47,7 +48,7 @@ public class MapManager : MonoBehaviour
     
 
 
-    public void TileClicked(GameTile inputTile, bool leftClicked)
+    public void TileClicked(GameTile inputTile, bool leftClicked, bool cardAbility)
     {
         UnhighlightTiles(highlightedTiles);
         if (leftClicked)
@@ -59,7 +60,7 @@ public class MapManager : MonoBehaviour
                     selectedTile.HideTile();
                 }
                 selectedTile = inputTile;
-                selectedTile.ShowTile();
+                selectedTile.ShowTile(Color.grey);
                 selectedUnit = selectedTile.GetUnit();
             }
             else
@@ -73,8 +74,8 @@ public class MapManager : MonoBehaviour
             }
             if (selectedUnit != null)
             {
-                inputTile.ShowTile();
-                HighlightTiles(GetTilesInRange(selectedTile, selectedUnit.GetRange()));
+                HighlightTiles(new List<GameTile>((IEnumerable<GameTile>)inputTile), Color.blue);
+                HighlightTiles(GetTilesInRange(selectedTile, selectedUnit.GetRange()), Color.grey);
             }
         }
         else
@@ -89,35 +90,12 @@ public class MapManager : MonoBehaviour
 
     }
 
-    /*
-    private void SetMatrixOffset(int xOffset, int yOffset)
-    {
-        matrixOffset = new Vector2Int(xOffset, yOffset);
-    }
-    private void SetMatrixOffset(Vector2Int offsetVector)
-    {
-        matrixOffset = offsetVector;
-    }
-    public Vector2Int GetMatrixOffset() { return matrixOffset; }
-
-    public Vector2Int MatrixToTile(Vector2Int coords)
-    {
-        return new Vector2Int(coords.x - Mathf.Abs(tilemap.cellBounds.min.x), coords.y - Mathf.Abs(tilemap.cellBounds.min.y));
-    }
-    public Vector2Int GameToMatrix(Vector2Int coords)
-    {
-        return new Vector2Int(coords.x + Mathf.Abs(tilemap.cellBounds.min.x), coords.y + Mathf.Abs(tilemap.cellBounds.min.y));
-    }
-    */
-
-
     /// <summary>
     /// Creates a unitGame on the input coordinates
     /// </summary>
     /// <param name="matrixCoord"></param>
-    public void CreateUnit(Vector2Int matrixCoord)
+    public void CreateNewUnit(Vector2Int matrixCoord)
     {
-
         if (matrixCoord == null)
         {
             Debug.LogAssertion("Input coordinates are null");
@@ -140,6 +118,47 @@ public class MapManager : MonoBehaviour
         unitObj.MoveUnit(matrixCoord, gameTiles[matrixCoord.x, matrixCoord.y].transform.position);
         //unitGame.transform.position = gameTiles[tileCoord.x, tileCoord.y].transform.position;
         gameTiles[matrixCoord.x, matrixCoord.y].SetUnit(unitObj);
+        if (unitObj == null)
+        {
+            Debug.LogAssertion("unitObj = null");
+        }
+        if (GameManager.gameManager == null)
+        {
+            Debug.LogAssertion("GameManager.gameManager is null");
+        }
+        GameManager.gameManager.EquipUnitStart(unitObj);
+    }
+
+    public void CreateUnit(Vector2Int matrixCoords, UnitObject unitData)
+    {
+        if (matrixCoords == null)
+        {
+            Debug.LogAssertion("Input coordinates are null");
+        }
+        if (gameTiles[matrixCoords.x, matrixCoords.y] == null)
+        {
+            Debug.LogAssertion(string.Format("Could not create unit at {0} as no tile exists", matrixCoords));
+            return;
+        }
+        if (gameTiles[matrixCoords.x, matrixCoords.y].GetUnit() != null)
+        {
+            Debug.LogAssertion(string.Format("Tile {0} already occupied by {1}", matrixCoords, gameTiles[matrixCoords.x, matrixCoords.y].GetUnit().name));
+        }
+        GameObject unitGame = Instantiate(unitPrefab, unitContainer.transform);
+        Unit unit = unitGame.GetComponent<Unit>();
+        unit.SetUnitObject(unitData);
+        unitData.SetUnit(unitGame.GetComponent<Unit>());
+        unitData.MoveUnit(matrixCoords, gameTiles[matrixCoords.x, matrixCoords.y].transform.position);
+        //unitGame.transform.position = gameTiles[tileCoord.x, tileCoord.y].transform.position;
+        gameTiles[matrixCoords.x, matrixCoords.y].SetUnit(unitData);
+        if (unitData == null)
+        {
+            Debug.LogAssertion("unitObj = null");
+        }
+        if (GameManager.gameManager == null)
+        {
+            Debug.LogAssertion("GameManager.gameManager is null");
+        }
     }
 
     #region Unit Movement
@@ -372,6 +391,10 @@ public class MapManager : MonoBehaviour
         return tiles;
     }
 
+    public GameTile[,] GetGameTiles()
+    {
+        return gameTiles;
+    }
     /*
     public bool QueueContains(PriorityQueue<GameTile, float> stack, GameTile tile)
     {
@@ -407,13 +430,13 @@ public class MapManager : MonoBehaviour
     /// Highlights the tiles in the input list
     /// </summary>
     /// <param name="tileList"></param>
-    private void HighlightTiles(List<GameTile> tileList)
+    private void HighlightTiles(List<GameTile> tileList, Color colour)
     {
         foreach (GameTile tile in tileList)
         {
+            tile.ShowTile(colour);
             if (!highlightedTiles.Contains(tile))
             {
-                tile.ShowTile();
                 highlightedTiles.Add(tile);
             }
         }
@@ -437,16 +460,16 @@ public class MapManager : MonoBehaviour
                 if (highlightedTiles.Contains(tile))
                 {
                     tile.HideTile();
+                    highlightedTiles.Remove(tile);
                 }
             }
         }
-        highlightedTiles = new List<GameTile>();
     }
     #endregion
 
     #region Coordinate Conversion
 
-    private Vector3Int MatrixToCubic(Vector2Int matrixCoords)
+    public Vector3Int MatrixToCubic(Vector2Int matrixCoords)
     {
         // "&1" to get odd or even as works with -ve numbers
         int q = matrixCoords.x - (matrixCoords.y - (matrixCoords.y & 1)) / 2;
@@ -454,14 +477,14 @@ public class MapManager : MonoBehaviour
         return new Vector3Int(q, r, -q - r);
     }
 
-    private Vector2Int CubicToMatrix(Vector3Int cubicCoords)
+    public Vector2Int CubicToMatrix(Vector3Int cubicCoords)
     {
         int x = cubicCoords.x + (cubicCoords.y - (cubicCoords.y & 1)) / 2;
         int y = cubicCoords.y;
         return new Vector2Int(x, y);
     }
 
-    private float CubicDistance(Vector3Int start, Vector3Int end)
+    public float CubicDistance(Vector3Int start, Vector3Int end)
     {
         Vector3Int difference = CubicSubtraction(start, end);
         return (Mathf.Abs(difference.x) + Mathf.Abs(difference.y) + Mathf.Abs(difference.z)) / 2;
@@ -523,6 +546,8 @@ public class MapManager : MonoBehaviour
         return output;
     }
 
+
+
     #endregion
 
 
@@ -562,16 +587,6 @@ public class MapManager : MonoBehaviour
         gameTiles = new GameTile[bounds.size.x, bounds.size.y];
         Debug.LogFormat("Tilemap bounds: {0}", bounds);
 
-        /*
-        for ( int x = 0; x < bounds.x; x++ )
-        {
-            for( int y = 0; y < bounds.y; y++ )
-            {
-                if (tilemap.GetTile(new Vector3Int(x, y, TILE_Z))
-            }
-        }
-        */
-
         Debug.LogFormat("gameTiles shape: [{0}, {1}]", gameTiles.GetLength(0), gameTiles.GetLength(1));
         for (int x = 0; x < gameTiles.GetLength(0); x++)
         {
@@ -591,7 +606,7 @@ public class MapManager : MonoBehaviour
                 Vector3Int tilePos = new Vector3Int(x - offsetVector.x, y - offsetVector.y, 0);
                 if (tilemap.HasTile(tilePos))
                 {
-                    Debug.LogFormat("Tile at {0}", new Vector2Int(tilePos.x + offsetVector.x, tilePos.y + offsetVector.y));
+                    //Debug.LogFormat("Tile at {0}", new Vector2Int(tilePos.x + offsetVector.x, tilePos.y + offsetVector.y));
                     GameObject overlayTileObj = Instantiate(overlayTilePrefab, overlayContainer.transform);
                     GameTile overlayTile = overlayTileObj.GetComponent<GameTile>();
                     var cellPosition = tilemap.GetCellCenterWorld(tilePos);
@@ -607,18 +622,15 @@ public class MapManager : MonoBehaviour
             }
         }
 
-        //CreateUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
-        //CreateUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
-        //CreateUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
-
-
-
+        //CreateNewUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
+        //CreateNewUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
+        //CreateNewUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
     }
 
 
     public void CreateRandomUnit()
     {
-        Debug.LogAssertionFormat("gameTiles == null: {0}", gameTiles == null);
+        //Debug.LogAssertionFormat("gameTiles == null: {0}", gameTiles == null);
         GameTile tile = null;
         if (gameTiles == null)
         {
@@ -637,7 +649,15 @@ public class MapManager : MonoBehaviour
         }
         Debug.LogFormat("tile: {0}", gameTiles[tile.GetMatrixCoords().x, tile.GetMatrixCoords().y]);
 
-        CreateUnit(tile.GetMatrixCoords());
+        //if def
+
+        Debug.LogFormat("tile: {0}", tile.GetMatrixCoords());
+        CreateNewUnit(tile.GetMatrixCoords());
+    }
+
+    public void StartTestEncounter()
+    {
+        EncounterManager.encounterManager.CreateEncounter(GameManager.gameManager.GetPlayerParty(), GameManager.gameManager.GetRandomParty());
     }
 
     // Update is called once per frame
@@ -645,4 +665,54 @@ public class MapManager : MonoBehaviour
     {
         
     }
+
+    public IEnumerator SelectFromUnits(List<UnitObject> unitList, bool target)
+    {
+        selectedTile = null;
+        UnhighlightTiles(highlightedTiles);
+        if (highlightedTiles.Count > 0)
+        {
+            Debug.LogErrorFormat("More than 0 tiles highlighted: {0}", highlightedTiles.Count);
+        }
+        bool highlighted = false;
+        List<GameTile> tiles = new List<GameTile>();
+        while (!unitList.Contains(selectedUnit))
+        {
+            if (!highlighted)
+            {
+                foreach (UnitObject unit in unitList)
+                {
+                    Vector2Int coords = unit.GetCoords();
+                    tiles.Add(gameTiles[coords.x, coords.y]);
+                }
+                if (target)
+                {
+                    HighlightTiles(tiles, Color.red);
+                }
+                else
+                {
+                    HighlightTiles(tiles, Color.green);
+                }
+                highlighted = true;
+            }
+            // if other tile selected, 
+            if (selectedTile != null)
+            {
+                EncounterManager.encounterManager.cardFailed = true;
+                yield break;
+            }
+
+            yield return null;
+        }
+        if (target)
+        {
+            EncounterManager.encounterManager.cardTarget = selectedUnit;
+        }
+        else
+        {
+            EncounterManager.encounterManager.cardActivator = selectedUnit;
+        }
+        yield break;
+    }
+
 }

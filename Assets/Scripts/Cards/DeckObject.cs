@@ -10,20 +10,24 @@ public class DeckObject : ScriptableObject
     [SerializeField] private int queueSize = 0;
 
 
+
     public void SetCards(List<CardObject> cardList)
     {
         queue.Clear();
         AddCards(cardList);
     }
-    public void AddCards(List<CardObject> cardList)
+    public void AddCards(List<CardObject> cardListInput)
     {
-        if (cardList == null)
+        if (cardListInput == null)
         {
             Debug.LogAssertionFormat("cardList = {0}", null);
         }
-        foreach(CardObject card in cardList)
+        foreach(CardObject card in cardListInput)
         {
+            Debug.LogFormat("Adding card ({0}) to deck ({1})", card.name, this.name);
+            this.cardList.Add(card);
             queue.Enqueue(card);
+            queueSize++;
         }
     }
 
@@ -50,13 +54,13 @@ public class DeckObject : ScriptableObject
     /*
     public void SaveDeck()
     {
-        cardList = new List<CardObject>();
+        cardListInput = new List<CardObject>();
         while (queue.Count > 0)
         {
             CardObject card = queue.Dequeue();
             if (card != null)
             {
-                cardList.Add(card);
+                cardListInput.Add(card);
             }
         }
         queueSize = queue.Count;
@@ -150,5 +154,16 @@ public class DeckObject : ScriptableObject
             }
         }
     }
+
+    public string DeckToString()
+    {
+        string output = "Deck:\n";
+        foreach (CardObject card in cardList)
+        {
+            output += "[" + card.cardName + "]\n";
+        }
+        return output;
+    }
+
 }
 

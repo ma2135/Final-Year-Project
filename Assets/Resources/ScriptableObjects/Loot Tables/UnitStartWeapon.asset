@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9834e13aed7e3a24c80f13a0ce54b7fe, type: 3}
+  m_Name: UnitStartWeapon
+  m_EditorClassIdentifier: 
+  probabilities:
+  - 60
+  - 30
+  - 10
+  items:
+  - {fileID: 11400000, guid: 0bfc78f74f0ac954aa24511e0be543b5, type: 2}
+  - {fileID: 11400000, guid: ab20d050dc60708419d0bf1e0b97f249, type: 2}
+  - {fileID: 11400000, guid: a88a75a4759cad04095f83b98110632b, type: 2}
+  totalProbability: 0

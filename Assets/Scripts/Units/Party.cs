@@ -7,25 +7,64 @@ using UnityEngine;
 public class Party : ScriptableObject
 {
     [SerializeField] private List<UnitObject> unitList = new List<UnitObject>();
-    [SerializeField] private Inventory inventory;
+    [SerializeField] private InventoryObject inventory;
     [SerializeField] private DeckObject deck;
+    [SerializeField] int deckSize = 0;
     public int size = 0;
+    private int delay = 0;
+    private int maxDelay = 20;
 
-    public void OnValidate()
+    [SerializeField] private bool update = false;
+
+
+    private void OnValidate()
     {
-        UpdateParty();
+        if (update)
+        {
+            UpdateParty();
+            update = false;
+        }
     }
 
-    private void Awake()
+    public void SetUp()
     {
         if (inventory == null)
         {
-            inventory = CreateInstance<Inventory>();
+            Debug.LogFormat("Creating new inventory in party: {0}", this.name);
+            inventory = ScriptableObject.CreateInstance<InventoryObject>();
         }
         if (deck == null)
         {
-            deck = CreateInstance<DeckObject>();
+            Debug.LogFormat("Creating new deck in party: {0}", this.name);
+            deck = ScriptableObject.CreateInstance<DeckObject>();
         }
+        size = unitList.Count;
+        Debug.LogFormat("size: {0}", size);
+        Debug.LogFormat(deck.DeckToString());
+
+        /*
+        if (unitList != null && unitList.Count > 0)
+        {
+            foreach (UnitObject unit in unitList)
+            {
+                if (unit != null)
+                {
+                    bool equipped = false;
+                    foreach (EquipmentObject item in unit.GetEquipment())
+                    {
+                        if (item != null)
+                        {
+                            equipped = true;
+                        }
+                    }
+                    if (!equipped)
+                    {
+                        GameManager.gameManager.EquipUnitStart(unit);
+                    }
+                }
+            }            
+        }*/
+        UpdateParty();
     }
 
     public void UpdateParty()
@@ -39,8 +78,9 @@ public class Party : ScriptableObject
     {
         if (inventory == null)
         {
-            inventory = new Inventory();
+            inventory = new InventoryObject();
         }
+        /*
         foreach(UnitObject unit in unitList)
         {
             if (unit != null)
@@ -54,6 +94,7 @@ public class Party : ScriptableObject
                 }
             }
         }
+        */
     }
 
     private void UpdateDeck()
@@ -62,13 +103,29 @@ public class Party : ScriptableObject
         {
             deck = new DeckObject();
         }
-        foreach (UnitObject unit in unitList)
+        else
         {
-            if (unit!= null && unit.GetUnitDeck() != null)
+            deck.ClearDeck();
+            Debug.LogFormat("Deck cleared");
+            foreach (UnitObject unit in unitList)
             {
-                deck.AddCards(unit.GetUnitDeck().GetXCards(unit.GetUnitDeck().GetDeckSize()));
+                if (unit != null)
+                {
+                    EquipmentObject[] equipment = unit.GetEquipment();
+
+                    for (int i = 0; i < equipment.Length; i++)
+                    {
+                        if (equipment[i] != null)
+                        {
+                            Debug.LogFormat("Adding {0} card(s) to party deck from the item: {1}", equipment[i].GetCards(), equipment);
+                            deck.AddCards(equipment[i].GetCards());
+                        }
+                    }
+                }
             }
         }
+        deckSize = deck.GetDeckSize();
+        Debug.LogFormat("Deck size: {0}", deckSize);
     }
 
     public UnitObject GetUnit(int index)
@@ -78,5 +135,10 @@ public class Party : ScriptableObject
     public List<UnitObject> GetAllUnits()
     {
         return unitList;
+    }
+
+    public DeckObject GetDeck()
+    {
+        return deck;
     }
 }

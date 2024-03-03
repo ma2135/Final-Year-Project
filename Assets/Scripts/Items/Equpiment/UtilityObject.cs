@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Healing Object", menuName = "Inventory/Items/Create Healing Item")]
+[CreateAssetMenu(fileName = "New Utility Object", menuName = "Inventory/Items/Create Utility Item")]
 
-public class UtilityObject : ItemObject
+public class UtilityObject : EquipmentObject
 {
 
     private void Awake()

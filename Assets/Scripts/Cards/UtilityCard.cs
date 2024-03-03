@@ -25,4 +25,10 @@ public class UtilityCard : CardObject
 
     public int GetHealingAmount() {  return this.healingAmount; }
 
+    new public void PlayCardEffect()
+    {
+        //select unit
+        //that unit regains health
+    }
+
 }
