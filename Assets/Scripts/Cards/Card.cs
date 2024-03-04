@@ -56,7 +56,6 @@ public class Card : MonoBehaviour
     */
     public void PlayCard()
     {
-        //move to discard pile
         //activate effect
 
     }

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -49,16 +50,18 @@ public class GameManager : MonoBehaviour
             {
                 unit.playerUnit = true; ;
             }
+            playerParty.SetUp();
         }
         if (enemyParties.Count == 0)
         {
             Debug.LogErrorFormat("enemyParties is empty: {0}", enemyParties.Count);
         }
-
         foreach (Party party in enemyParties)
         {
             party.SetUp();
-}
+        }
+
+
     }
 
     public Party GetPlayerParty()

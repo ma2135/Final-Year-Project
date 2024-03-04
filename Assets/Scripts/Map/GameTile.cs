@@ -1,12 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using Unity.VisualScripting;
 using UnityEngine;
+using Color = UnityEngine.Color;
 
 public class GameTile : MonoBehaviour
 {
 
     [SerializeField] Vector2Int matrixCoords;
+    [SerializeField] Color standardColour = Color.white;
+    private Color spawnColour = Color.white;
 
     private UnitObject unit = null;
     private bool occupied = false;
@@ -36,14 +40,17 @@ public class GameTile : MonoBehaviour
     public void ShowTile(Color colour)
     {
         //Color colour = gameObject.GetComponent<SpriteRenderer>().color;
+        gameObject.GetComponent<SpriteRenderer>().color = new Color(standardColour.r, standardColour.g, standardColour.b, 0.3f);
+    }
+    public void SetSpawnZone(Color colour)
+    {
+        spawnColour = colour;
         gameObject.GetComponent<SpriteRenderer>().color = new Color(colour.r, colour.g, colour.b, 0.5f);
     }
-
     public bool IsOccupied()
     {
         return occupied;
     }
-
     public void SetOccupied(bool occupied)
     {
         this.occupied = occupied;

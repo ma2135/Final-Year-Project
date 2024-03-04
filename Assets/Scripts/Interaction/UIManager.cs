@@ -20,7 +20,7 @@ public class UIManager : MonoBehaviour
 
     List<GameObject> hand = new List<GameObject>();
     [SerializeField] private GameObject[] cardSlots;
-    [SerializeField] private bool[] freeCardSlots;
+    [SerializeField] private CardObject[] handCards;
 
     [Header("Inventory")]
     [SerializeField] private ItemSlot[] equipSlots;
@@ -32,19 +32,20 @@ public class UIManager : MonoBehaviour
     private Party displayParty = null;
     private int unitIndex = 0;
 
+    [Header("Encounter")]
+    [SerializeField] private GameObject playerTurnText;
+    [SerializeField] private GameObject enemyTurnText;
 
 
     private void Start()
     {
         uiManager = this;
-        freeCardSlots = new bool[maxHandSize];
-        for (int i = 0; i < freeCardSlots.Length; i++) 
-        { 
-            freeCardSlots[i] = true;
+        handCards = new CardObject[maxHandSize];
+        for (int i = 0; i < handCards.Length; i++)
+        {
             cardSlots[i].SetActive(false);
         }
     }
-
 
     public IEnumerator DrawCard(DeckObject deck)
     {
@@ -61,24 +62,30 @@ public class UIManager : MonoBehaviour
         {
             //should only ever draw 1 card
             CardObject card = deck.GetXCards(1)[0];
-
-            bool flag = false;
+            Debug.LogFormat("playerHandSize = {0} || cardSlots.Length = {1}", handCards, cardSlots.Length);
+            //bool flag = false;
             for (int i = 0; i < cardSlots.Length; i++)
             {
-                if (freeCardSlots[i])
+                if (handCards[i] == null)
                 {
-                    cardSlots[i].transform.GetChild(0).transform.GetChild(0).GetComponent<TMP_Text>().text = card.name;
-                    cardSlots[i].transform.GetChild(0).transform.GetChild(1).GetComponent<TMP_Text>().text = card.cost.ToString();
-                    freeCardSlots[i] = false;
-                    flag = true;
+                    handCards[i] = card;
+                    Debug.LogFormat("Placing card ({1}) to hand position {0}", i, card.name);
+                    cardSlots[i].transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).GetComponent<TMP_Text>().text = card.name;
+                    cardSlots[i].transform.GetChild(0).transform.GetChild(1).transform.GetChild(0).GetComponent<TMP_Text>().text = card.cost.ToString();
+                    cardSlots[i].transform.GetChild(0).transform.GetChild(2).transform.GetChild(0).GetComponent<TMP_Text>().text = card.range.ToString();
+                    cardSlots[i].transform.GetChild(0).transform.GetChild(3).transform.GetChild(0).GetComponent<TMP_Text>().text = card.description.ToString();
+                    //flag = true;
                     cardSlots[i].SetActive(true);
+                    
                     break;
                 }
             }
+            /*
             if (flag)
             {
                 Debug.LogAssertionFormat("All card slots used");
             }
+            */
         }
     }
 
@@ -93,10 +100,24 @@ public class UIManager : MonoBehaviour
         yield break;
     }
 
+    public void PlayCard(int cardIndex)
+    {
+        CardObject discardCard = handCards[cardIndex];
+        Debug.LogFormat("Playing card ({0})", discardCard.name);
+        StartCoroutine(EncounterManager.encounterManager.PlayCard(discardCard));
+        handCards[cardIndex] = null;
+        cardSlots[cardIndex].SetActive(false);
+        EncounterManager.encounterManager.DiscardCard(discardCard);
+
+
+    }
+
+
     public void StartEncounter()
     {
-        EncounterManager.encounterManager.StartEncounter();
+        StartCoroutine(EncounterManager.encounterManager.StartEncounter());
     }
+
 
 
     public void DisplayInventory()
@@ -141,6 +162,24 @@ public class UIManager : MonoBehaviour
         unitImage.sprite = unit.GetUnitSprite();
     }
 
+    public void DisplayCurrentTurn(bool player)
+    {
+        if (player)
+        {
+            playerTurnText.SetActive(true);
+            enemyTurnText.SetActive(false);
+        }
+        else
+        {
+            enemyTurnText.SetActive(true);
+            playerTurnText.SetActive(false);
+        }
+    }
+
+    public void EndPlayerTurn()
+    {
+        StartCoroutine(EncounterManager.encounterManager.EndTurn());
+    }
 
     // Update is called once per frame
     void Update()

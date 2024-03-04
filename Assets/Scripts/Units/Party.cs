@@ -41,29 +41,6 @@ public class Party : ScriptableObject
         size = unitList.Count;
         Debug.LogFormat("size: {0}", size);
         Debug.LogFormat(deck.DeckToString());
-
-        /*
-        if (unitList != null && unitList.Count > 0)
-        {
-            foreach (UnitObject unit in unitList)
-            {
-                if (unit != null)
-                {
-                    bool equipped = false;
-                    foreach (EquipmentObject item in unit.GetEquipment())
-                    {
-                        if (item != null)
-                        {
-                            equipped = true;
-                        }
-                    }
-                    if (!equipped)
-                    {
-                        GameManager.gameManager.EquipUnitStart(unit);
-                    }
-                }
-            }            
-        }*/
         UpdateParty();
     }
 

@@ -16,16 +16,25 @@ public class DeckObject : ScriptableObject
         queue.Clear();
         AddCards(cardList);
     }
-    public void AddCards(List<CardObject> cardListInput)
+    public void AddCards(List<CardObject> cardList)
     {
-        if (cardListInput == null)
+        if (cardList == null)
         {
             Debug.LogAssertionFormat("cardList = {0}", null);
         }
-        foreach(CardObject card in cardListInput)
+        foreach(CardObject card in cardList)
         {
             Debug.LogFormat("Adding card ({0}) to deck ({1})", card.name, this.name);
             this.cardList.Add(card);
+            queue.Enqueue(card);
+            queueSize++;
+        }
+    }
+
+    public void EnqueueFromDiscard(List<CardObject> cardList)
+    {
+        foreach(CardObject card in cardList)
+        {
             queue.Enqueue(card);
             queueSize++;
         }
@@ -54,13 +63,13 @@ public class DeckObject : ScriptableObject
     /*
     public void SaveDeck()
     {
-        cardListInput = new List<CardObject>();
+        cardList = new List<CardObject>();
         while (queue.Count > 0)
         {
             CardObject card = queue.Dequeue();
             if (card != null)
             {
-                cardListInput.Add(card);
+                cardList.Add(card);
             }
         }
         queueSize = queue.Count;
@@ -69,7 +78,7 @@ public class DeckObject : ScriptableObject
 
     public List<CardObject> GetXCards(int x) 
     {
-        Debug.LogFormat("Queue count: {0}", queue.Count);
+        Debug.LogFormat("Card left in deck: {0}", queue.Count);
         List<CardObject> cards = new List<CardObject>();
         if (x == -1)
         {
@@ -83,6 +92,7 @@ public class DeckObject : ScriptableObject
         {
             Debug.LogFormat("Adding card to XCards: {0}", queue.Peek());
             cards.Add(queue.Dequeue());
+            queueSize--;
         }
         return cards;
     }

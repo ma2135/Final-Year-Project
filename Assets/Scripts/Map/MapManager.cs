@@ -50,8 +50,10 @@ public class MapManager : MonoBehaviour
 
     public void TileClicked(GameTile inputTile, bool leftClicked, bool cardAbility)
     {
+        // If previous tile was a spawn tile, return to spawn colour
         UnhighlightTiles(highlightedTiles);
         if (leftClicked)
+
         {
             if (inputTile != selectedTile)
             {
@@ -74,13 +76,12 @@ public class MapManager : MonoBehaviour
             }
             if (selectedUnit != null)
             {
-                HighlightTiles(new List<GameTile>((IEnumerable<GameTile>)inputTile), Color.blue);
+                //HighlightTiles(new List<GameTile>((IEnumerable<GameTile>)inputTile), Color.blue);
                 HighlightTiles(GetTilesInRange(selectedTile, selectedUnit.GetRange()), Color.grey);
             }
         }
         else
         {
-
             if (selectedUnit != null)
             {
                 MoveUnit(selectedTile, inputTile);
@@ -162,38 +163,6 @@ public class MapManager : MonoBehaviour
     }
 
     #region Unit Movement
-    /*
-    /// <summary>
-    /// Move the unitGame on the unitTile to the destinationTile
-    /// </summary>
-    /// <param name="unitTile"></param>
-    /// <param name="destinationTile"></param>
-    /// <returns></returns>
-    public bool MoveUnit(GameTile unitTile, GameTile destinationTile)
-    {
-        if (unitTile == null || destinationTile == null)
-        {
-            Debug.LogError("MoveUnit - Null input");
-        }
-        if (unitTile.GetUnit() == null)
-        {
-            Debug.LogError(string.Format("MoveUnit - No unitGame on tile {0} to move", unitTile.GetMatrixCoords()));
-            return false;
-        }
-        if (destinationTile.GetUnit() != null)
-        {
-            Debug.LogError(string.Format("MoveUnit - Cannot move unitGame to destination. Tile {0} is already occupied", destinationTile.GetMatrixCoords()));
-            return false;
-        }
-
-        destinationTile.SetUnit(unitTile.GetUnit());
-        unitTile.SetUnit(null);
-        destinationTile.GetUnit().MoveUnit(destinationTile.GetMatrixCoords(), destinationTile.transform.position);
-
-        return true;
-    }
-    */
-
     public bool MoveUnit(GameTile unitTile, GameTile destinationTile)
     {
         if (unitTile == null || destinationTile == null)
@@ -672,7 +641,7 @@ public class MapManager : MonoBehaviour
         UnhighlightTiles(highlightedTiles);
         if (highlightedTiles.Count > 0)
         {
-            Debug.LogErrorFormat("More than 0 tiles highlighted: {0}", highlightedTiles.Count);
+            Debug.LogFormat("More than 0 tiles highlighted: {0}", highlightedTiles.Count);
         }
         bool highlighted = false;
         List<GameTile> tiles = new List<GameTile>();

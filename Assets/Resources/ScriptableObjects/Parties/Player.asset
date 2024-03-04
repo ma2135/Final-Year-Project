@@ -16,7 +16,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 75420b83e0c7ff647b795930e52a4336, type: 2}
   - {fileID: 11400000, guid: 59e05123f0a3ce6438dcca6f51f8ba12, type: 2}
   - {fileID: 11400000, guid: 90481cbc467287e45ad37c2514d8db07, type: 2}
-  inventory: {fileID: 11400000, guid: c01709df44fe3914d90082d050117b0d, type: 2}
-  deck: {fileID: 11400000, guid: 33790060d76af964c89ca2a54d014a1c, type: 2}
-  deckSize: 15
+  inventory: {fileID: 0}
+  deck: {fileID: 0}
+  deckSize: 16
   size: 3
+  update: 0

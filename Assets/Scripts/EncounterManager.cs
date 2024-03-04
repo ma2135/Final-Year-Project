@@ -12,9 +12,12 @@ public class EncounterManager : MonoBehaviour
 
     [SerializeField] private DeckObject playersDeck;
     [SerializeField] private DeckObject defendersDeck;
+    [SerializeField] private List<CardObject> playersDiscardDeck = new List<CardObject>();
+    [SerializeField] private List<CardObject> defendersDiscardDeck = new List<CardObject>();
+
 
     [SerializeField] private bool setupPhase = true;
-
+    private bool firstTurn = true;
     [SerializeField] private GameObject hand;
 
     public UnitObject cardActivator = null;
@@ -42,8 +45,8 @@ public class EncounterManager : MonoBehaviour
         defendersDeck = defenders.GetDeck();
 
         // Updates the Decks for the parties
-        playerParty.UpdateParty();
-        defenders.UpdateParty();
+        // playerParty.UpdateParty();
+        // defenders.UpdateParty();
         Debug.LogFormat("PlayerDeck.Count = {0}", defendersDeck.GetDeckSize());
         Debug.LogFormat("DefendersDeck.Count = {0}", defendersDeck.GetDeckSize());
 
@@ -162,23 +165,92 @@ public class EncounterManager : MonoBehaviour
 
     }
 
-    public void StartEncounter()
+    private void DrawCard(DeckObject deck, int drawAmount)
+    {
+        for (int i = 0; i <= drawAmount; i++)
+        {
+            if (deck.GetDeckSize() == 0)
+            {
+                DiscardToDeck(playersTurn);
+                if (deck.GetDeckSize() == 0)
+                {
+                    Debug.LogErrorFormat("Did not add discard pile to deck");
+                }
+            }
+
+            StartCoroutine(UIManager.uiManager.DrawCard(deck));
+        }
+    }
+
+    public void DiscardCard(CardObject card)
+    {
+        if (playersTurn)
+        {
+            playersDiscardDeck.Add(card);
+        }
+        else
+        {
+            defendersDiscardDeck.Add(card);
+        }
+    }
+
+    private void DiscardToDeck(bool player)
+    {
+        if (player)
+        {
+            playersDeck.EnqueueFromDiscard(playersDiscardDeck);
+            playersDiscardDeck.Clear();
+            // playersDeck.Shuffle();
+            // shuffle discard deck before adding back to hand queue
+        }
+        else
+        {
+            defendersDeck.EnqueueFromDiscard(defendersDiscardDeck);
+            defendersDiscardDeck.Clear();
+            // defendersDeck.Shuffle();
+            // shuffle discard deck before adding back to hand queue
+        }
+    }
+
+
+    public IEnumerator StartEncounter()
     {
         // Draw starting hand
         if (playersDeck == null)
         {
-            Debug.LogErrorFormat("playersDFeck == null");
+            Debug.LogErrorFormat("playersDeck == null");
         }
-        if (playerParty.GetDeck() == null)
-        {
-            Debug.LogErrorFormat("playerParty Deck == null");
-        }
-        Debug.LogAssertionFormat("Player's deck size: {0}", playerParty.GetDeck().GetDeckSize());
+        Debug.LogFormat("Player's deck size: {0}", playersDeck.GetDeckSize());
+        // FIX -> playersDeck.Shuffle();
         StartCoroutine(UIManager.uiManager.DrawStartingHand(playersDeck, GameManager.gameManager.playerDrawSize));
+        //MapManager.mapManager.UnhighlightTiles();
         // Play turns
         while (encounter)
         {
-            StartCoroutine(PlayTurn(playersTurn));
+            StartCoroutine(StartTurn(playersTurn));
+            if (!playersTurn)
+            {
+                if (!firstTurn)
+                {
+                    DrawCard(defendersDeck, 2);
+                }
+                // AI turn
+            }
+            else
+            {
+                if (!firstTurn)
+                {
+                    DrawCard(playersDeck, 2);
+                }
+                while (playersTurn)
+                {
+                    yield return null;
+                }
+            }
+            firstTurn = false;
+
+            encounter = false;
+            EndEncounter();
         }
 
     }
@@ -187,6 +259,23 @@ public class EncounterManager : MonoBehaviour
     {
         hand.gameObject.SetActive(false);
     }
+
+    public IEnumerator StartTurn(bool playerTurn)
+    {
+        // Any start of turn events happen here
+        Debug.Log("========== START OF TURN ==========");
+        UIManager.uiManager.DisplayCurrentTurn(playersTurn);
+        yield break;
+    }
+
+    public IEnumerator EndTurn()
+    {
+        // Any end of turn events happen here
+        playersTurn = !playersTurn;
+
+        yield break;
+    }
+
 
     //https://www.youtube.com/watch?v=kUP6OK36nrM&ab_channel=GameDevBeginner
     public IEnumerator PlayCard(CardObject card)
@@ -218,7 +307,8 @@ public class EncounterManager : MonoBehaviour
         else 
         {
             activators = GetPossibleActivatorUnits(card, playersTurn);
-            if (activators.Count !> 0)
+            Debug.LogFormat("({0}) units can activate the card", activators.Count);
+            if (activators.Count == 0)
             {
                 Debug.LogErrorFormat("No Unit can be selected to play the selected card");
             }
@@ -230,7 +320,8 @@ public class EncounterManager : MonoBehaviour
             }
 
             targets = GetPossibleTargetUnits(cardActivator.GetCoords(), card, playersTurn);
-            if (targets.Count! > 0)
+            Debug.LogFormat("({0}) units can be targeted by the card", targets.Count);
+            if (targets.Count == 0)
             {
                 Debug.LogErrorFormat("No Unit can be selected as a target for the card");
             }
@@ -321,9 +412,5 @@ public class EncounterManager : MonoBehaviour
         return possibleTargets;
     }
 
-    private IEnumerator PlayTurn(bool player)
-    {
-        yield break;
-    }
 
 }
