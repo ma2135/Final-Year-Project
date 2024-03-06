@@ -15,7 +15,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject leftMarker;
     [SerializeField] private GameObject rightMarker;
 
-    [SerializeField] private int maxHandSize = 5;
+    [SerializeField] public int maxHandSize = 5;
     private int currHandSize = 0;
 
     List<GameObject> hand = new List<GameObject>();
@@ -102,14 +102,16 @@ public class UIManager : MonoBehaviour
 
     public void PlayCard(int cardIndex)
     {
+        CardObject card = handCards[cardIndex];
+        Debug.LogFormat("Playing card ({0})", card.name);
+        StartCoroutine(EncounterManager.encounterManager.PlayCard(cardIndex));
+    }
+
+    public void RemoveCardFromHand(int cardIndex)
+    {
         CardObject discardCard = handCards[cardIndex];
-        Debug.LogFormat("Playing card ({0})", discardCard.name);
-        StartCoroutine(EncounterManager.encounterManager.PlayCard(discardCard));
         handCards[cardIndex] = null;
         cardSlots[cardIndex].SetActive(false);
-        EncounterManager.encounterManager.DiscardCard(discardCard);
-
-
     }
 
 

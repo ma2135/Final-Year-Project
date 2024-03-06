@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using Color = UnityEngine.Color;
 
@@ -9,9 +10,9 @@ public class GameTile : MonoBehaviour
 {
 
     [SerializeField] Vector2Int matrixCoords;
-    [SerializeField] Color standardColour = Color.white;
-    private Color spawnColour = Color.white;
-
+    [SerializeField] Color highlightColour = Color.grey;
+    private Color spawnColour;
+    [SerializeField] private float highlightStrength = 0.3f;
     private UnitObject unit = null;
     private bool occupied = false;
 
@@ -23,29 +24,54 @@ public class GameTile : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        HideTile();
+        spawnColour = Color.clear;
+        gameObject.GetComponent<SpriteRenderer>().color = Color.clear;
     }
 
-    // Update is called once per frame
-    void Update()
+    public void SetHighlightColour(Color highlightColour)
     {
-        
+        this.highlightColour = highlightColour;
     }
 
-    public void HideTile()
-    {
-        Color colour = gameObject.GetComponent<SpriteRenderer>().color;
-        gameObject.GetComponent<SpriteRenderer>().color = new Color(colour.r, colour.g, colour.b, 0);
-    }
-    public void ShowTile(Color colour)
+    public void HighlightTile(bool spawn)
     {
         //Color colour = gameObject.GetComponent<SpriteRenderer>().color;
-        gameObject.GetComponent<SpriteRenderer>().color = new Color(standardColour.r, standardColour.g, standardColour.b, 0.3f);
+        Color highlight;
+        if (spawn)
+        {
+            if (spawnColour == Color.clear)
+            {
+                highlight = new Color(highlightColour.r, highlightColour.g, highlightColour.b, highlightStrength);
+
+            }
+            else
+            {
+                highlight = new Color(highlightColour.r + spawnColour.r, highlightColour.g + spawnColour.g, highlightColour.b + spawnColour.b, highlightStrength);
+            }
+        }
+        else
+        {
+            highlight = new Color(highlightColour.r, highlightColour.g, highlightColour.b, highlightStrength);
+        }
+        gameObject.GetComponent<SpriteRenderer>().color = highlight;
     }
-    public void SetSpawnZone(Color colour)
+
+    public void UnHighlightTile(bool spawn)
+    {
+        if (spawn)
+        {
+            gameObject.GetComponent<SpriteRenderer>().color = new Color(spawnColour.r, spawnColour.g, spawnColour.b, highlightStrength);
+        }
+        else
+        {
+            gameObject.GetComponent<SpriteRenderer>().color = Color.clear;
+        }
+    }
+
+    public void SetSpawnColour(Color colour)
     {
         spawnColour = colour;
-        gameObject.GetComponent<SpriteRenderer>().color = new Color(colour.r, colour.g, colour.b, 0.5f);
+        gameObject.GetComponent<SpriteRenderer>().color = new Color(colour.r, colour.g, colour.b, 0.3f);
     }
     public bool IsOccupied()
     {

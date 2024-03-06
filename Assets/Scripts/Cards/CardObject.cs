@@ -47,13 +47,7 @@ public class CardObject : ScriptableObject
         this.id = id;
     }
 
-    protected void PlayCard()
-    {
-        Debug.Log("Card played - CardObject");
-        EncounterManager.encounterManager.PlayCard(this);
-    }
-
-    protected void PlayCardEffect()
+    public void PlayCardEffect(UnitObject activator, UnitObject target)
     {
         Debug.Log("Activating card effect - CardObject");
     }

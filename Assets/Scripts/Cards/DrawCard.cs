@@ -22,6 +22,7 @@ public class DrawCard : CardObject
 
     public int GetDrawAmount() { return drawAmount; }
 
+    /*
     new public void PlayCardEffect()
     {
         for (int i = 0; i < drawAmount; i++)
@@ -29,4 +30,5 @@ public class DrawCard : CardObject
             EncounterManager.encounterManager.PlayCard(this);
         }
     }
+    */
 }

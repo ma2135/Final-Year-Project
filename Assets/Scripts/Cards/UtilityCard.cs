@@ -25,8 +25,9 @@ public class UtilityCard : CardObject
 
     public int GetHealingAmount() {  return this.healingAmount; }
 
-    new public void PlayCardEffect()
+    new public void PlayCardEffect(UnitObject activator, UnitObject target)
     {
+        EncounterManager.encounterManager.HealUnit(target, healingAmount);
         //select unit
         //that unit regains health
     }

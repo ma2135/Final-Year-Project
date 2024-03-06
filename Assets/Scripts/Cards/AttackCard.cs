@@ -30,10 +30,10 @@ public class AttackCard : CardObject
 
     public int GetDamage() { return attackDamage;}
 
-    new public void PlayCardEffect()
+    new public void PlayCardEffect(UnitObject activator, UnitObject target)
     {
 
-
+        EncounterManager.encounterManager.DamageUnit(target, attackDamage);
 
 
         // select friendly unit

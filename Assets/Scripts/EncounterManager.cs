@@ -14,11 +14,18 @@ public class EncounterManager : MonoBehaviour
     [SerializeField] private DeckObject defendersDeck;
     [SerializeField] private List<CardObject> playersDiscardDeck = new List<CardObject>();
     [SerializeField] private List<CardObject> defendersDiscardDeck = new List<CardObject>();
+    [SerializeField] private CardObject[] playersHand;// = new CardObject[];
+    [SerializeField] private CardObject[] defendersHand;// = new CardObject[];
+
+    private GameTile[,] playerSpawnZone;
+    private GameTile[,] defendersSpawnZone;
 
 
-    [SerializeField] private bool setupPhase = true;
+    [SerializeField] public bool setupPhase = true;
     private bool firstTurn = true;
+    private bool endTurn = false;
     [SerializeField] private GameObject hand;
+    private GameState currentGameState;
 
     public UnitObject cardActivator = null;
     public UnitObject cardTarget = null;
@@ -31,6 +38,8 @@ public class EncounterManager : MonoBehaviour
     private void Start()
     {
         encounterManager = this;
+        playersHand = new CardObject[UIManager.uiManager.maxHandSize];
+        defendersHand = new CardObject[UIManager.uiManager.maxHandSize];
     }
 
     public void CreateEncounter(Party player, Party defenders)
@@ -44,13 +53,18 @@ public class EncounterManager : MonoBehaviour
         playersDeck = player.GetDeck();
         defendersDeck = defenders.GetDeck();
 
+        foreach(UnitObject unit in playerParty.GetAllUnits())
+        {
+            unit.playerUnit = true;
+        }
+
         // Updates the Decks for the parties
         // playerParty.UpdateParty();
         // defenders.UpdateParty();
         Debug.LogFormat("PlayerDeck.Count = {0}", defendersDeck.GetDeckSize());
         Debug.LogFormat("DefendersDeck.Count = {0}", defendersDeck.GetDeckSize());
 
-        //Place units
+        //Place board
         int spawnWidth = Mathf.RoundToInt(gameTiles.GetLength(0) / 4);
         int spawnHeight = gameTiles.GetLength(1);
         int defendersIndent = gameTiles.GetLength(0) - spawnWidth - 1;
@@ -66,6 +80,7 @@ public class EncounterManager : MonoBehaviour
                 defendersSpawn[i, j] = gameTiles[i + defendersIndent, j];
             }
         }
+        /*
         foreach (GameTile tile in attackersSpawn)
         {
             if (tile != null)
@@ -80,6 +95,12 @@ public class EncounterManager : MonoBehaviour
                 tile.GetComponent<SpriteRenderer>().color = Color.red.WithAlpha(0.2f);
             }
         }
+        */
+        playerSpawnZone = attackersSpawn;
+        defendersSpawnZone = defendersSpawn;
+        MapManager.mapManager.SetTilesAsSpawn(attackersSpawn, Color.blue);
+        MapManager.mapManager.SetTilesAsSpawn(defendersSpawn, Color.red);
+        MapManager.mapManager.SetPlayerSpawnWidth(spawnWidth);
 
         int unitDeployOrigin = Mathf.RoundToInt(spawnHeight / 2);
         int yStep = 0;
@@ -88,10 +109,10 @@ public class EncounterManager : MonoBehaviour
 
         List<Vector2Int> positions = new List<Vector2Int>();
         List<UnitObject> units = player.GetAllUnits();
-        //Debug.LogAssertionFormat("unit length: {0}", units.Count);
+        //Debug.LogAssertionFormat("unit length: {0}", board.Count);
         for (int i = 0; i < units.Count; i++)
         {
-            //Debug.LogAssertionFormat("1 - i = {0}", i);
+            //Debug.LogAssertionFormat("1 - x = {0}", x);
             positions.Add(new Vector2Int(attackersSpawn.GetLength(0) - 1 - xStep, unitDeployOrigin + yStep));
             //Debug.LogAssertionFormat("2 - Adding position");
             if (!firstPlaced && i <= units.Count)
@@ -99,7 +120,7 @@ public class EncounterManager : MonoBehaviour
                 positions.Add(new Vector2Int(attackersSpawn.GetLength(0) - 1 - xStep, unitDeployOrigin - yStep));
                 //Debug.LogAssertionFormat("3 - Adding position");
                 i++;
-                //Debug.LogAssertionFormat("4 - Adding to i = {0}", i);
+                //Debug.LogAssertionFormat("4 - Adding to x = {0}", x);
             }
             yStep++;
             firstPlaced = false;
@@ -184,6 +205,7 @@ public class EncounterManager : MonoBehaviour
 
     public void DiscardCard(CardObject card)
     {
+
         if (playersTurn)
         {
             playersDiscardDeck.Add(card);
@@ -215,6 +237,9 @@ public class EncounterManager : MonoBehaviour
 
     public IEnumerator StartEncounter()
     {
+        setupPhase = false;
+        MapManager.mapManager.HideSpawnZone(playerSpawnZone);
+        MapManager.mapManager.HideSpawnZone(defendersSpawnZone);
         // Draw starting hand
         if (playersDeck == null)
         {
@@ -225,16 +250,23 @@ public class EncounterManager : MonoBehaviour
         StartCoroutine(UIManager.uiManager.DrawStartingHand(playersDeck, GameManager.gameManager.playerDrawSize));
         //MapManager.mapManager.UnhighlightTiles();
         // Play turns
+
+        int count = 0;
+
         while (encounter)
         {
-            StartCoroutine(StartTurn(playersTurn));
             if (!playersTurn)
             {
                 if (!firstTurn)
                 {
                     DrawCard(defendersDeck, 2);
                 }
+                Debug.LogAssertionFormat("Starting AI turn");
+                StartCoroutine(StartTurn(playersTurn));
                 // AI turn
+
+                StartCoroutine(EndTurn());
+
             }
             else
             {
@@ -242,35 +274,47 @@ public class EncounterManager : MonoBehaviour
                 {
                     DrawCard(playersDeck, 2);
                 }
+                Debug.LogAssertionFormat("Starting players turn");
+                StartCoroutine(StartTurn(playersTurn));
                 while (playersTurn)
                 {
                     yield return null;
                 }
             }
             firstTurn = false;
-
-            encounter = false;
-            EndEncounter();
+            count++;
+            if (count == 3)
+            {
+                encounter = false;
+            }
         }
+        EndEncounter();
 
     }
 
     public void EndEncounter()
     {
+        Debug.LogAssertionFormat("End of encounter");
         hand.gameObject.SetActive(false);
     }
 
     public IEnumerator StartTurn(bool playerTurn)
     {
         // Any start of turn events happen here
+        endTurn = false;
         Debug.Log("========== START OF TURN ==========");
         UIManager.uiManager.DisplayCurrentTurn(playersTurn);
+        while (endTurn == false)
+        {
+            yield return null;
+        }
         yield break;
     }
 
     public IEnumerator EndTurn()
     {
         // Any end of turn events happen here
+        endTurn = true;
         playersTurn = !playersTurn;
 
         yield break;
@@ -278,7 +322,7 @@ public class EncounterManager : MonoBehaviour
 
 
     //https://www.youtube.com/watch?v=kUP6OK36nrM&ab_channel=GameDevBeginner
-    public IEnumerator PlayCard(CardObject card)
+    public IEnumerator PlayCard(int cardIndex)
     {
         // yield return null  ->  suspends coroutine until next frame, can be used to make update loops - loops can persist over several frames
         // yield return new WaitForSeconds()
@@ -289,6 +333,10 @@ public class EncounterManager : MonoBehaviour
         // yield return StartCoroutine()  ->  Wait until the next coroutine is complete
 
         // yield break - exit out of the coroutine
+
+        Debug.LogAssertionFormat("card Index ({0}) selected, card: {1}", cardIndex, playersHand[cardIndex].name);
+
+        CardObject card = playersHand[cardIndex];
 
         cardFailed = false;
         List<UnitObject> activators;
@@ -333,14 +381,20 @@ public class EncounterManager : MonoBehaviour
             }
 
         }
-        
-        // call play card with these units
 
+        // call play card with these board
+
+        card.PlayCardEffect(cardActivator, cardTarget);
+
+        UIManager.uiManager.RemoveCardFromHand(cardIndex);
+        DiscardCard(card);
+        // remove card from hand
+    
         yield break;
     }
 
     /// <summary>
-    /// Returns a list of all units that can activate the card used
+    /// Returns a list of all board that can activate the card used
     /// </summary>
     /// <param name="card"></param>
     /// <param name="player"></param>
@@ -380,7 +434,7 @@ public class EncounterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns a list of all units that the card can target
+    /// Returns a list of all board that the card can target
     /// </summary>
     /// <param name="centerTile"></param>
     /// <param name="card"></param>
@@ -412,5 +466,250 @@ public class EncounterManager : MonoBehaviour
         return possibleTargets;
     }
 
+    public void DamageUnit(UnitObject unit, int damage)
+    {
+        unit.health = unit.health - damage;
+
+        if (unit.shield > 0)
+        {
+            if (damage > unit.shield)
+            {
+                damage -= unit.shield;
+                unit.shield = 0;
+            }
+            else if (damage < unit.shield)
+            {
+                unit.shield -= damage;
+                damage = 0;
+            }
+        }
+        unit.health -= damage;
+
+        if (unit.health < 0)
+        {
+            if (unit.playerUnit)
+            {
+                playerParty.KillUnit(unit);
+            }
+            else
+            {
+                defenders.KillUnit(unit);
+            }
+        }
+        // Change current game state int[,]s ro reflect the change in unit health
+    }
+
+    public void ShieldUnit(UnitObject unit, int shield)
+    {
+        unit.shield += shield;
+    }
+
+    public void HealUnit(UnitObject unit, int healAmount)
+    {
+        unit.health += healAmount;
+        if (unit.health > unit.maxHealth)
+        {
+            unit.health = unit.maxHealth;
+        }
+    }
+
+
+    private void UpdateGameState()
+    {
+        int[,] unitArray = new int[gameTiles.GetLength(0), gameTiles.GetLength(1)];
+        int[,] movementArray = new int[gameTiles.GetLength(0), gameTiles.GetLength(1)];
+        List<Vector2Int> unitPositions = new List<Vector2Int>();
+        foreach (UnitObject unit in playerParty.GetAllUnits())
+        {
+            Vector2Int unitTile = unit.GetCoords();
+            unitArray[unitTile.x, unitTile.y] = -unit.health;
+            movementArray[unitTile.x, unitTile.y] = unit.movement;
+            unitPositions.Add(unit.GetCoords());
+        }
+        foreach (UnitObject unit in defenders.GetAllUnits())
+        {
+            Vector2Int unitTile = unit.GetCoords();
+            unitArray[unitTile.x, unitTile.y] = unit.health;
+            movementArray[unitTile.x, unitTile.y] = unit.movement;
+            unitPositions.Add(unit.GetCoords());
+        }
+
+        GameState initialState = new GameState(unitArray, movementArray, unitPositions);
+
+        initialState.GetAvailableGameStates(playersTurn);
+        currentGameState = initialState;
+    }
+
+    private void AITurn(EnemyType enemy)
+    {
+        // Requires:
+        //  - board positions
+        //  - hand
+        //  - possible moves
+        //      PathToTile().count <= unit movement movement
+
+
+        // +ve = AI, -ve = player
+        int[,] unitArray = new int[gameTiles.GetLength(0), gameTiles.GetLength(1)];
+        int[,] movementArray = new int[gameTiles.GetLength(0), gameTiles.GetLength(1)];
+        List<Vector2Int> unitPositions = new List<Vector2Int>();
+        foreach (UnitObject unit in playerParty.GetAllUnits())
+        {
+            Vector2Int unitTile = unit.GetCoords();
+            unitArray[unitTile.x, unitTile.y] = -unit.health;
+            movementArray[unitTile.x, unitTile.y] = unit.movement;
+            unitPositions.Add(unit.GetCoords());
+        }
+        foreach (UnitObject unit in defenders.GetAllUnits())
+        {
+            Vector2Int unitTile = unit.GetCoords();
+            unitArray[unitTile.x, unitTile.y] = unit.health;
+            movementArray[unitTile.x, unitTile.y] = unit.movement;
+            unitPositions.Add(unit.GetCoords());
+        }
+
+        GameState initialState = new GameState(unitArray, movementArray, unitPositions);
+
+        initialState.GetAvailableGameStates(playersTurn);
+        List<GameStateAndScore> scoresList = new List<GameStateAndScore>();
+        foreach (GameState state in initialState.availableGameStates)
+        {
+            scoresList.Add(new GameStateAndScore(ScoreGameState(enemy), state));
+        }
+        initialState.ScoreStates(scoresList);
+
+    }
+
+
+    private void Minimax(int depth, int player, int alpha, int beta)
+    {
+        int bestScore = 0;
+
+
+
+    }
+
+
+    public int ScoreGameState(EnemyType enemyType)
+    {
+        int score = 0;
+        if (enemyType == EnemyType.Agressive)
+        {
+            foreach (UnitObject unit in playerParty.GetAllUnits())
+            {
+                score = score - unit.health;
+            }
+        }
+        if (enemyType == EnemyType.Defensive)
+        {
+            foreach (UnitObject unit in defenders.GetAllUnits() )
+            {
+                score = score + unit.health;
+            }
+        }
+        return score;
+    }
+
+}
+
+
+public class GameStateAndScore
+{
+    public int score;
+    public GameState state;
+    public GameStateAndScore(int score, GameState state)
+    {
+        this.score = score;
+        this.state = state;
+    }
+}
+
+public class GameState
+{
+    public int[,] board;
+    public List<Vector2Int> unitPositions;
+    public int[,] movement;
+    public CardObject[] hand;
+    public List<GameState> availableGameStates = new List<GameState>();
+    public List<GameStateAndScore> scoredGameStates = new List<GameStateAndScore>();
+
+    MapManager mapManager;
+
+    public GameState(int[,] board, int[,] movement, List<Vector2Int> unitPositions)
+    {
+        this.board = board;
+        this.movement = movement;
+        this.unitPositions = unitPositions;
+        mapManager = MapManager.mapManager;
+    }
+
+    public void ScoreStates(List<GameStateAndScore> scores)
+    {
+        scoredGameStates = scores;
+    }
+
+    public bool UniqueBoardCheck(int[,] board1, int[,] board2)
+    {
+        for (int x = 0; x < board1.Length; x++)
+        {
+            for (int y = 0; y < board1.Length; y++)
+            {
+                if (board1[x, y] != board2[x, y])
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void GetAvailableGameStates(bool player)
+    {
+        foreach (Vector2Int unitPos in unitPositions)
+        {
+            if ((player && board[unitPos.x, unitPos.y] < 0) || (!player && board[unitPos.x, unitPos.y] > 0))
+            {
+                if (movement[unitPos.x, unitPos.y] > 0)
+                {
+                    // Adds new 
+                    List<GameTile> tiles = mapManager.GetTilesInRange(mapManager.GetGameTiles()[unitPos.x, unitPos.y], movement[unitPos.x, unitPos.y]);
+                    foreach (GameTile tile in tiles)
+                    {
+                        availableGameStates.Add(MoveUnit(board, movement, unitPos, tile.GetMatrixCoords()));
+                    }
+                }
+            }
+        }
+    }
+
+    private GameState MoveUnit(int[,] array, int[,] movement, Vector2Int startCell, Vector2Int endCell)
+    {
+        int[,] newArray = new int[array.GetLength(0), array.GetLength(1)];
+        array.CopyTo(newArray, 0);
+        int[,] newMovement = new int[movement.GetLength(0), movement.GetLength(1)];
+        array.CopyTo(newMovement, 0);
+        // Move array and movement values from cell to cell
+        newArray[endCell.x, endCell.y] = newArray[startCell.x, startCell.y];
+        newArray[startCell.x, startCell.y] = 0;
+        newMovement[endCell.x, endCell.y] = newMovement[startCell.x, startCell.y] - Mathf.RoundToInt(mapManager.CubicDistance(mapManager.MatrixToCubic(startCell), mapManager.MatrixToCubic(endCell)));
+        newMovement[startCell.x, startCell.y] = 0;
+        if (newMovement[endCell.x, endCell.y] < 0)
+        {
+            Debug.LogErrorFormat("Movement cell in new GameState < 0 ({0})", newMovement[endCell.x, endCell.y]);
+        }
+        List<Vector2Int> unitList = new List<Vector2Int>();
+        foreach (Vector2Int pos in unitPositions)
+        {
+            if (pos == startCell)
+            {
+                unitList.Add(endCell);
+            }
+            else
+            {
+                unitList.Add(pos);
+            }
+        }
+        return new GameState(newArray, newMovement, unitList);
+    }
 
 }

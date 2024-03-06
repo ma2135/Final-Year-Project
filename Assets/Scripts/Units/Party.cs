@@ -118,4 +118,41 @@ public class Party : ScriptableObject
     {
         return deck;
     }
+
+    /// <summary>
+    /// Remove unit for the party
+    /// </summary>
+    /// <param name="unit"></param>
+    public void RemoveUnit(UnitObject unit)
+    {
+        if (unit != null || !unitList.Contains(unit))
+        {
+            Debug.LogErrorFormat("Cannot remove unit. Either it does not exist or the unit was not a member of hte party specified");
+        }
+        else
+        {
+            unitList.Remove(unit);
+        }
+    }
+
+    /// <summary>
+    /// Remove unit from the party while keeping equipment
+    /// </summary>
+    /// <param name="unit"></param>
+    public void KillUnit(UnitObject unit)
+    {
+        if (unit != null || !unitList.Contains(unit))
+        {
+            Debug.LogErrorFormat("Cannot remove unit. Either it does not exist or the unit was not a member of hte party specified");
+        }
+        else
+        {
+            foreach(EquipmentObject equipment in unit.GetEquipment())
+            {
+                inventory.AddItem(equipment, 1);
+            }
+            unitList.Remove(unit);
+        }
+    }
+
 }

@@ -10,12 +10,17 @@ using static UnityEngine.RuleTile.TilingRuleOutput;
 public class UnitObject : ScriptableObject
 {
     private Unit unit;
+    public int maxHealth = 5;
+    public int health = 5;
+    public int shield = 0;
+
     [SerializeField] public bool playerUnit = false;
     [SerializeField] private Sprite unitSprite;
     [SerializeField] private EquipmentObject[] equipedItems = new EquipmentObject[5];
     //[SerializeField] DeckObject unitDeck;
     Vector2Int matrixCoords;
-    int range = 3;
+    public int movement = 3;
+    public int maxMovement = 3;
 
     private void Awake()
     {
@@ -93,7 +98,7 @@ public class UnitObject : ScriptableObject
 
     public int GetRange()
     {
-        return range;
+        return movement;
     }
 
     public EquipmentObject[] GetEquipment()
