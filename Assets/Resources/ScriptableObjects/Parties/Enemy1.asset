@@ -20,3 +20,4 @@ MonoBehaviour:
   deck: {fileID: 0}
   deckSize: 11
   size: 3
+  update: 0

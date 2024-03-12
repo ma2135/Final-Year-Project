@@ -6,6 +6,7 @@ using UnityEngine;
 
 public class DefenceCard : CardObject
 {
+    /*
     [SerializeField] private int shieldAmount;
 
     private new void Awake()
@@ -17,12 +18,14 @@ public class DefenceCard : CardObject
                 GameManager.cardIdCount++;
             }
         }
-        ability = CardAbility.Defence;
+        //ability = CardAbility.Defence;
     }
     new public void PlayCardEffect(UnitObject activator, UnitObject target)
     {
+        Debug.Log("Activating card effect - Defence Card");
         EncounterManager.encounterManager.ShieldUnit(target, shieldAmount);
         // select unit within movement
         // that unit gains armour (temporary health)
     }
+    */
 }

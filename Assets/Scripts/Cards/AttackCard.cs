@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class AttackCard : CardObject
 {
-
+    /*
     [SerializeField] int attackDamage;
 
     private new void Awake()
@@ -18,11 +18,11 @@ public class AttackCard : CardObject
         }
         if (range > 1)
         {
-            ability = CardAbility.Ranged;
+            //ability = CardAbility.Ranged;
         }
         else
         {
-            ability = CardAbility.Melee;
+            //ability = CardAbility.Melee;
         }
     }
 
@@ -32,13 +32,9 @@ public class AttackCard : CardObject
 
     new public void PlayCardEffect(UnitObject activator, UnitObject target)
     {
-
+        Debug.Log("Activating card effect - Defence Card");
         EncounterManager.encounterManager.DamageUnit(target, attackDamage);
 
-
-        // select friendly unit
-        // select enemy unit
-        // do damage to enemy unit
     }
-
+    */
 }

@@ -141,9 +141,10 @@ public class Party : ScriptableObject
     /// <param name="unit"></param>
     public void KillUnit(UnitObject unit)
     {
-        if (unit != null || !unitList.Contains(unit))
+        Debug.LogFormat("Unit ({0}) was killed in battle", unit.name.ToString());
+        if (unit == null || !unitList.Contains(unit))
         {
-            Debug.LogErrorFormat("Cannot remove unit. Either it does not exist or the unit was not a member of hte party specified");
+            Debug.LogErrorFormat("Cannot remove unit. Either it does not exist or the unit was not a member of the party specified");
         }
         else
         {
@@ -151,7 +152,8 @@ public class Party : ScriptableObject
             {
                 inventory.AddItem(equipment, 1);
             }
-            unitList.Remove(unit);
+            unit.KillUnit();
+            //unitList.Remove(unit);
         }
     }
 

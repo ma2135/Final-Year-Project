@@ -7377,6 +7377,8 @@ MonoBehaviour:
   defendersDeck: {fileID: 0}
   playersDiscardDeck: []
   defendersDiscardDeck: []
+  playersHand: []
+  defendersHand: []
   setupPhase: 1
   hand: {fileID: 813766131}
   cardActivator: {fileID: 0}
@@ -8590,7 +8592,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &813766132
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13435,7 +13437,6 @@ MonoBehaviour:
   - {fileID: 1519868586}
   - {fileID: 1112941134}
   - {fileID: 1587376619}
-  handCards: []
   equipSlots:
   - {fileID: 139263490}
   - {fileID: 1045132454}
@@ -13812,10 +13813,10 @@ MonoBehaviour:
   overlayTilePrefab: {fileID: 6326219296708579799, guid: ccc014f1790aaa44398b24ebf9d9be25, type: 3}
   overlayContainer: {fileID: 267024428}
   selectedTile: {fileID: 0}
-  selectedCoords: {x: 0, y: 0}
   selectedUnit: {fileID: 0}
   unitPrefab: {fileID: 8416919387174856960, guid: 39c263484ee9ce046a9c410f8018bdac, type: 3}
   unitContainer: {fileID: 980076197}
+  unitsMovable: 1
 --- !u!156049354 &1274892683
 Grid:
   m_ObjectHideFlags: 0
@@ -15014,19 +15015,39 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 1249070981}
     - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 1274892681}
+    - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: PlayCard
       objectReference: {fileID: 0}
     - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UIManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
       value: UIManager, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 6859295041193284068, guid: 15f1aab1a2d8e08418f33306b0669e1d, type: 3}

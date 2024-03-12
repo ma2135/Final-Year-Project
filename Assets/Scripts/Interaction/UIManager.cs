@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 public class UIManager : MonoBehaviour
 {
@@ -20,7 +21,6 @@ public class UIManager : MonoBehaviour
 
     List<GameObject> hand = new List<GameObject>();
     [SerializeField] private GameObject[] cardSlots;
-    [SerializeField] private CardObject[] handCards;
 
     [Header("Inventory")]
     [SerializeField] private ItemSlot[] equipSlots;
@@ -40,77 +40,38 @@ public class UIManager : MonoBehaviour
     private void Start()
     {
         uiManager = this;
-        handCards = new CardObject[maxHandSize];
-        for (int i = 0; i < handCards.Length; i++)
-        {
-            cardSlots[i].SetActive(false);
-        }
     }
 
-    public IEnumerator DrawCard(DeckObject deck)
+    public IEnumerator SetCardToPosition(CardObject card, int position)
     {
-        if (GameManager.gameManager == null)
+        if (card == null)
         {
+            Debug.LogAssertionFormat("Card is null");
             yield break;
         }
-        if (deck.GetDeckSize() < 1)
-        {
-            Debug.LogAssertionFormat("Deck size: {0}", deck.GetDeckSize());
-            yield break;
-        }
-        if (currHandSize < maxHandSize - 1)
-        {
-            //should only ever draw 1 card
-            CardObject card = deck.GetXCards(1)[0];
-            Debug.LogFormat("playerHandSize = {0} || cardSlots.Length = {1}", handCards, cardSlots.Length);
-            //bool flag = false;
-            for (int i = 0; i < cardSlots.Length; i++)
-            {
-                if (handCards[i] == null)
-                {
-                    handCards[i] = card;
-                    Debug.LogFormat("Placing card ({1}) to hand position {0}", i, card.name);
-                    cardSlots[i].transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).GetComponent<TMP_Text>().text = card.name;
-                    cardSlots[i].transform.GetChild(0).transform.GetChild(1).transform.GetChild(0).GetComponent<TMP_Text>().text = card.cost.ToString();
-                    cardSlots[i].transform.GetChild(0).transform.GetChild(2).transform.GetChild(0).GetComponent<TMP_Text>().text = card.range.ToString();
-                    cardSlots[i].transform.GetChild(0).transform.GetChild(3).transform.GetChild(0).GetComponent<TMP_Text>().text = card.description.ToString();
-                    //flag = true;
-                    cardSlots[i].SetActive(true);
-                    
-                    break;
-                }
-            }
-            /*
-            if (flag)
-            {
-                Debug.LogAssertionFormat("All card slots used");
-            }
-            */
-        }
+        Debug.LogFormat("Placing card ({1}) to hand position {0}", position, card.name);
+        cardSlots[position].transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).GetComponent<TMP_Text>().text = card.name;
+        cardSlots[position].transform.GetChild(0).transform.GetChild(1).transform.GetChild(0).GetComponent<TMP_Text>().text = card.cost.ToString();
+        cardSlots[position].transform.GetChild(0).transform.GetChild(2).transform.GetChild(0).GetComponent<TMP_Text>().text = card.range.ToString();
+        cardSlots[position].transform.GetChild(0).transform.GetChild(3).transform.GetChild(0).GetComponent<TMP_Text>().text = card.description.ToString();
+        cardSlots[position].SetActive(true);
     }
 
-    public IEnumerator DrawStartingHand(DeckObject deck, int handSize)
-    {
-        int cardsDrawn = 0;
-        while (cardsDrawn < handSize)
-        {
-            StartCoroutine(DrawCard(deck));
-            cardsDrawn++;
-        }
-        yield break;
-    }
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="cardIndex"></param>
     public void PlayCard(int cardIndex)
     {
-        CardObject card = handCards[cardIndex];
-        Debug.LogFormat("Playing card ({0})", card.name);
+        CardObject card = EncounterManager.encounterManager.playersHand[cardIndex];
+        Debug.LogFormat("Playing card ({0}) at ({1})", card.name, cardIndex);
         StartCoroutine(EncounterManager.encounterManager.PlayCard(cardIndex));
     }
 
     public void RemoveCardFromHand(int cardIndex)
     {
-        CardObject discardCard = handCards[cardIndex];
-        handCards[cardIndex] = null;
+        CardObject discardCard = EncounterManager.encounterManager.playersHand[cardIndex];
+        EncounterManager.encounterManager.playersHand[cardIndex] = null;
         cardSlots[cardIndex].SetActive(false);
     }
 
@@ -128,7 +89,7 @@ public class UIManager : MonoBehaviour
         unitIndex = 0;
         if (displayParty.size !> 0)
         {
-            Debug.LogAssertionFormat("Player party size: {0}", displayParty.size);
+            Debug.LogFormat("Player party size: {0}", displayParty.size);
         }
         else
         {

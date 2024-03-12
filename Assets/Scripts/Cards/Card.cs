@@ -42,7 +42,7 @@ public class Card : MonoBehaviour
     public void SetCost(int cost) {  cardData.cost = cost; }
 
     /*
-    public int GetRange() {  return cardData.movement; }
+    public int GetMovementRange() {  return cardData.movement; }
     public void SetRange(int movement) {  cardData.movement = movement; }
     */
 

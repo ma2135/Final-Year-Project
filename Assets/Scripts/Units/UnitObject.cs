@@ -96,7 +96,7 @@ public class UnitObject : ScriptableObject
         unit.transform.position = gameCoords;
     }
 
-    public int GetRange()
+    public int GetMovementRange()
     {
         return movement;
     }
@@ -141,4 +141,12 @@ public class UnitObject : ScriptableObject
 
     public void SetUnit(Unit unit) { this.unit = unit; }
     public Unit GetUnit() { return unit; }
+
+
+    public void KillUnit()
+    {
+        unit.gameObject.SetActive(false);
+    }
+
+
 }

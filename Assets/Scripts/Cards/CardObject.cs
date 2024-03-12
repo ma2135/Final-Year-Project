@@ -3,13 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 [System.Serializable]
 
+
+[CreateAssetMenu(fileName = "New Card", menuName = "Deck/Create Card")]
 public class CardObject : ScriptableObject
 {
     // Data storage for the cards
     public int id = -1;
     private Card card;
 
-    [SerializeField] protected CardAbility ability;
+    [SerializeField] private CardAbility ability;
+    public int attackDamage;
+    public int shieldAmount;
+    public int drawAmount;
+    public int healingAmount;
 
     public string cardName;
     public string description;
@@ -49,7 +55,22 @@ public class CardObject : ScriptableObject
 
     public void PlayCardEffect(UnitObject activator, UnitObject target)
     {
-        Debug.Log("Activating card effect - CardObject");
+        Debug.LogFormat("Playing ({0}) card", this.name);
+        if (shieldAmount > 0)
+        {
+            EncounterManager.encounterManager.ShieldUnit(target, shieldAmount);
+        }
+        if (drawAmount > 0)
+        {
+            EncounterManager.encounterManager.DrawCardCurrent(drawAmount);
+        }
+        if (healingAmount > 0)
+        {
+            EncounterManager.encounterManager.HealUnit(target, healingAmount);
+        }
+        if (attackDamage > 0)
+        {
+            EncounterManager.encounterManager.DamageUnit(target, attackDamage);
+        }
     }
-
 }

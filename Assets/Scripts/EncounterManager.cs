@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ public class EncounterManager : MonoBehaviour
     [SerializeField] private DeckObject defendersDeck;
     [SerializeField] private List<CardObject> playersDiscardDeck = new List<CardObject>();
     [SerializeField] private List<CardObject> defendersDiscardDeck = new List<CardObject>();
-    [SerializeField] private CardObject[] playersHand;// = new CardObject[];
+    [SerializeField] public CardObject[] playersHand;// = new CardObject[];
     [SerializeField] private CardObject[] defendersHand;// = new CardObject[];
 
     private GameTile[,] playerSpawnZone;
@@ -38,13 +39,14 @@ public class EncounterManager : MonoBehaviour
     private void Start()
     {
         encounterManager = this;
-        playersHand = new CardObject[UIManager.uiManager.maxHandSize];
-        defendersHand = new CardObject[UIManager.uiManager.maxHandSize];
     }
+
 
     public void CreateEncounter(Party player, Party defenders)
     {
         Debug.Log("========== STARTING ENCOUNTER ==========");
+        playersHand = new CardObject[GameManager.gameManager.playerDrawSize];
+        defendersHand = new CardObject[GameManager.gameManager.playerDrawSize];
         //spawn player on the left
         //spawn defenders on the right
         gameTiles = MapManager.mapManager.GetGameTiles();
@@ -179,13 +181,9 @@ public class EncounterManager : MonoBehaviour
             }
         }
 
-        if (hand != null)
-        {
-            hand.gameObject.SetActive(true);
-        }
-
     }
 
+    /*
     private void DrawCard(DeckObject deck, int drawAmount)
     {
         for (int i = 0; i <= drawAmount; i++)
@@ -199,10 +197,12 @@ public class EncounterManager : MonoBehaviour
                 }
             }
 
-            StartCoroutine(UIManager.uiManager.DrawCard(deck));
+            StartCoroutine(UIManager.uiManager.SetCardToPosition(deck));
         }
     }
+    */
 
+    #region Deck Management
     public void DiscardCard(CardObject card)
     {
 
@@ -234,6 +234,80 @@ public class EncounterManager : MonoBehaviour
         }
     }
 
+    public void DrawCardCurrent(int amount)
+    {
+        Debug.LogFormat("Drawing ({0}) cards", amount);
+        DeckObject deck;
+        if (playersTurn)
+        {
+            deck = playersDeck;
+        }
+        else
+        {
+            deck = defendersDeck;
+        }
+        DrawCard(deck, amount);
+    }
+
+    public void DrawCard(DeckObject deck, int amount)
+    {
+        for (int i = 0; i < amount; i++)
+        {
+            DrawCard(deck);
+        }
+    }
+
+    public CardObject DrawCard(DeckObject deck)
+    {
+        CardObject[] hand;
+        int nextCard = -1;
+        if (deck == playersDeck)
+        {
+            hand = playersHand;
+        }
+        else
+        {
+            hand = defendersHand;
+        }
+        for (int i = 0; i < hand.Length; i++)
+        {
+            if (hand[i] == null)
+            {
+                nextCard = i;
+                break;
+            }
+        }
+        if (nextCard == -1)
+        {
+            Debug.LogErrorFormat("All hand positions are full. No card can be drawn");
+            return null;
+        }
+        CardObject card = deck.GetXCards(1)[0];
+        hand[nextCard] = card;
+        StartCoroutine(UIManager.uiManager.SetCardToPosition(card, nextCard));
+        return card;
+        //Set cards to hand positions
+        //UiManager.uiManager.SetCardToPosition() 
+
+    }
+
+    private void DrawStartingHand(bool player)
+    {
+        int handSize;
+        DeckObject deck;
+        if (player)
+        {
+            handSize = playersHand.Length;
+            deck = playersDeck;
+        }
+        else
+        {
+            handSize = defendersHand.Length;
+            deck = defendersDeck;
+        }
+        DrawCard(deck, handSize);
+    }
+    #endregion
 
     public IEnumerator StartEncounter()
     {
@@ -244,10 +318,12 @@ public class EncounterManager : MonoBehaviour
         if (playersDeck == null)
         {
             Debug.LogErrorFormat("playersDeck == null");
+            yield break;
         }
         Debug.LogFormat("Player's deck size: {0}", playersDeck.GetDeckSize());
         // FIX -> playersDeck.Shuffle();
-        StartCoroutine(UIManager.uiManager.DrawStartingHand(playersDeck, GameManager.gameManager.playerDrawSize));
+        DrawStartingHand(true);
+        DrawStartingHand(false);
         //MapManager.mapManager.UnhighlightTiles();
         // Play turns
 
@@ -334,53 +410,61 @@ public class EncounterManager : MonoBehaviour
 
         // yield break - exit out of the coroutine
 
-        Debug.LogAssertionFormat("card Index ({0}) selected, card: {1}", cardIndex, playersHand[cardIndex].name);
 
         CardObject card = playersHand[cardIndex];
+
+        Debug.LogFormat("Playing card {0}", card.name);
+
+        MapManager.mapManager.unitsMovable = false;
+        MapManager.mapManager.selectedUnit = null;
+        /*
+        Debug.LogFormat("playersHand null: {0}", playersHand == null);
+        Debug.LogFormat("playersHand.Length: {0}", playersHand.Length);
+        Debug.LogFormat("cardIndex: {0}", cardIndex);
+        Debug.LogFormat("playersHand[{0}] null: {1}", cardIndex, playersHand[cardIndex] == null);
+        Debug.LogFormat("card Index ({0}) selected, card: {1}", cardIndex, playersHand[cardIndex].name);
+        */
+        DeckObject deck;
+        if (playersTurn)
+        {
+            deck = playersDeck;
+        }
+        else
+        {
+            deck = defendersDeck;
+        }
 
         cardFailed = false;
         List<UnitObject> activators;
         List<UnitObject> targets;
-        if (card.GetAbility() == CardAbility.DrawCard)
-        {
-            if (playersTurn)
-            {
-                UIManager.uiManager.DrawCard(playersDeck);
-            }
-            else
-            {
-                UIManager.uiManager.DrawCard(defenders.GetDeck());
-            }
-        }
-        else 
-        {
-            activators = GetPossibleActivatorUnits(card, playersTurn);
-            Debug.LogFormat("({0}) units can activate the card", activators.Count);
-            if (activators.Count == 0)
-            {
-                Debug.LogErrorFormat("No Unit can be selected to play the selected card");
-            }
-            yield return StartCoroutine(MapManager.mapManager.SelectFromUnits(activators, false));
-            if (cardFailed)
-            {
-                Debug.LogFormat("No activator unit was selected");
-                yield break;
-            }
 
-            targets = GetPossibleTargetUnits(cardActivator.GetCoords(), card, playersTurn);
-            Debug.LogFormat("({0}) units can be targeted by the card", targets.Count);
-            if (targets.Count == 0)
-            {
-                Debug.LogErrorFormat("No Unit can be selected as a target for the card");
-            }
-            yield return StartCoroutine(MapManager.mapManager.SelectFromUnits(targets, true));
-            if (cardFailed)
-            {
-                Debug.LogFormat("No target unit was selected");
-                yield break;
-            }
-
+        activators = GetPossibleActivatorUnits(card, playersTurn);
+        Debug.LogFormat("({0}) units can activate the card", activators.Count);
+        if (activators.Count == 0)
+        {
+            Debug.LogErrorFormat("No Unit can be selected to play the selected card");
         }
+        yield return StartCoroutine(MapManager.mapManager.SelectFromUnits(activators, false));
+        Debug.Log("SelectFromUnits ended");
+        if (cardFailed)
+        {
+            Debug.LogFormat("No unit was selected");
+            yield break;
+        }
+        Debug.LogFormat("cardActivator: {0}", cardActivator.name.ToString());
+        targets = GetPossibleTargetUnits(cardActivator.GetCoords(), card, playersTurn);
+        Debug.LogFormat("({0}) units can be targeted by the card", targets.Count);
+        if (targets.Count == 0)
+        {
+            Debug.LogFormat("No Unit can be selected as a target for the card");
+        }
+        yield return StartCoroutine(MapManager.mapManager.SelectFromUnits(targets, true));
+        if (cardFailed)
+        {
+            Debug.LogFormat("No target was selected");
+            yield break;
+        }
+
 
         // call play card with these board
 
@@ -388,8 +472,7 @@ public class EncounterManager : MonoBehaviour
 
         UIManager.uiManager.RemoveCardFromHand(cardIndex);
         DiscardCard(card);
-        // remove card from hand
-    
+        // tile shading back to normal
         yield break;
     }
 
@@ -442,70 +525,80 @@ public class EncounterManager : MonoBehaviour
     /// <returns></returns>
     public List<UnitObject> GetPossibleTargetUnits(Vector2Int centerTile, CardObject card, bool player)
     {
-        List<UnitObject> possibleTargets = new List<UnitObject>();
-        Party targetParty = null;
-        if (card.GetAbility() != CardAbility.DrawCard)
+        // get enemies within card range of centerTile
+        if (centerTile == null || card == null)
         {
-            if (player)
-            {
-                targetParty = defenders;
-            }
-            else
-            {
-                targetParty = playerParty;
-            }
-            foreach (UnitObject unit in targetParty.GetAllUnits())
-            {
-                if (Mathf.RoundToInt(MapManager.mapManager.CubicDistance(MapManager.mapManager.MatrixToCubic(centerTile), MapManager.mapManager.MatrixToCubic(unit.GetCoords()))) <= card.range)
-                {
-                    possibleTargets.Add(unit);
-                }
-            }
+            Debug.LogError("something is null");
+        }
+        List<UnitObject> possibleTargets = new List<UnitObject>();
+        Party targetParty;
+        if (player)
+        {
+            targetParty = defenders;
+        }
+        else
+        {
+            targetParty = playerParty;
         }
 
+        List<GameTile> tiles = MapManager.mapManager.GetTilesInRange(gameTiles[centerTile.x, centerTile.y], card.range);
+
+        foreach(GameTile tile in tiles)
+        {
+            if (tile.GetUnit() != null && targetParty.GetAllUnits().Contains(tile.GetUnit()))
+            {
+                possibleTargets.Add(tile.GetUnit());
+            }
+        }
         return possibleTargets;
     }
 
-    public void DamageUnit(UnitObject unit, int damage)
+    public void DamageUnit(UnitObject unit, int damageAmount)
     {
-        unit.health = unit.health - damage;
+        Debug.LogFormat("Applying ({0}) damage to unit ({1})", damageAmount, unit.name);
+        unit.health = unit.health - damageAmount;
 
         if (unit.shield > 0)
         {
-            if (damage > unit.shield)
+            if (damageAmount > unit.shield)
             {
-                damage -= unit.shield;
+                damageAmount -= unit.shield;
                 unit.shield = 0;
             }
-            else if (damage < unit.shield)
+            else if (damageAmount < unit.shield)
             {
-                unit.shield -= damage;
-                damage = 0;
+                unit.shield -= damageAmount;
+                damageAmount = 0;
             }
         }
-        unit.health -= damage;
+        unit.health -= damageAmount;
 
         if (unit.health < 0)
         {
+            Debug.LogFormat("unit: {0} | player's party: {1}", unit.name, unit.playerUnit);
             if (unit.playerUnit)
             {
+                Debug.LogFormat("players party");
                 playerParty.KillUnit(unit);
             }
             else
             {
+                Debug.LogFormat("defenders party");
                 defenders.KillUnit(unit);
             }
         }
         // Change current game state int[,]s ro reflect the change in unit health
     }
 
-    public void ShieldUnit(UnitObject unit, int shield)
+    public void ShieldUnit(UnitObject unit, int shieldAmount)
     {
-        unit.shield += shield;
+        Debug.LogFormat("Applying {(0)} shield to unit {(1)}", shieldAmount, unit.name.ToString());
+        unit.shield += shieldAmount;
     }
 
     public void HealUnit(UnitObject unit, int healAmount)
     {
+        Debug.LogFormat("Applying {(0)} healing to unit {(1)}", healAmount, unit.name.ToString());
         unit.health += healAmount;
         if (unit.health > unit.maxHealth)
         {

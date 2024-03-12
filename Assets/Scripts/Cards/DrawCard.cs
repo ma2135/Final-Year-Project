@@ -6,7 +6,8 @@ using UnityEngine;
 
 public class DrawCard : CardObject
 {
-    [SerializeField] int drawAmount;
+    /*
+    public int drawAmount;
 
     private new void Awake()
     {
@@ -17,10 +18,8 @@ public class DrawCard : CardObject
                 GameManager.cardIdCount++;
             }
         }
-        ability = CardAbility.DrawCard;
+        //ability = CardAbility.DrawCard;
     }
-
-    public int GetDrawAmount() { return drawAmount; }
 
     /*
     new public void PlayCardEffect()

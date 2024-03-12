@@ -7,6 +7,7 @@ using UnityEngine;
 
 public class UtilityCard : CardObject
 {
+    /*
     [SerializeField] int healingAmount;
 
     private new void Awake()
@@ -18,7 +19,7 @@ public class UtilityCard : CardObject
                 GameManager.cardIdCount++;
             }
         }
-        ability = CardAbility.Utility;
+        //ability = CardAbility.Utility;
     }
 
     public void SetHealingAmount(int healingAmount) { this.healingAmount = healingAmount; }
@@ -27,9 +28,10 @@ public class UtilityCard : CardObject
 
     new public void PlayCardEffect(UnitObject activator, UnitObject target)
     {
+        Debug.Log("Activating card effect - Utility Card");
         EncounterManager.encounterManager.HealUnit(target, healingAmount);
         //select unit
         //that unit regains health
     }
-
+    */
 }

@@ -36,8 +36,7 @@ public class MapManager : MonoBehaviour
     [Header("Tiles")]
     [SerializeField] GameObject overlayTilePrefab;
     [SerializeField] GameObject overlayContainer;
-    [SerializeField] private GameTile selectedTile = null;
-    [SerializeField] private Vector2Int selectedCoords = Vector2Int.zero;
+    [SerializeField] public GameTile selectedTile = null;
 
     [SerializeField] public UnitObject selectedUnit = null;
     private List<GameTile> highlightedTiles = new List<GameTile>();
@@ -48,14 +47,18 @@ public class MapManager : MonoBehaviour
     [Header("Units")]
     [SerializeField] GameObject unitPrefab;
     [SerializeField] GameObject unitContainer;
-    
+
+    public bool unitsMovable = true;
+    private bool unitSelectionFailed;
+    private bool unitSelectionInProgress;
 
 
-    public void TileClicked(GameTile inputTile, bool leftClicked, bool cardAbility)
+
+    /*
+    public void TileClicked(GameTile inputTile, bool leftClicked)
     {
         UnhighlightTiles(highlightedTiles);
         if (leftClicked)
-
         {
             if (inputTile != selectedTile)
             {
@@ -85,7 +88,7 @@ public class MapManager : MonoBehaviour
             }
             if (selectedUnit != null)
             {
-                HighlightTiles(GetTilesInRange(selectedTile, selectedUnit.GetRange()));
+                HighlightTiles(GetTilesInRange(selectedTile, selectedUnit.GetMovementRange()));
             }
         }
         else
@@ -98,22 +101,41 @@ public class MapManager : MonoBehaviour
         selectedCoords = selectedTile.GetMatrixCoords();
 
     }
+    */
 
-    /*
-    public void SetPlayerSpawn(GameTile[,] spawnRegion)
+
+    public void TileLeftClicked(Vector2Int tileCoords)
     {
-        if (spawnRegion == null)
+        Debug.Log("Tile Clicked");
+        selectedTile = gameTiles[tileCoords.x, tileCoords.y];
+        UnhighlightTiles(highlightedTiles);
+        if (selectedTile.GetUnit() != null && selectedTile.GetUnit().playerUnit && unitsMovable)
         {
-            playerSpawn = spawnRegion;
+            selectedUnit = selectedTile.GetUnit();
+            HighlightTiles(GetTilesInRange(selectedTile, selectedUnit.GetMovementRange()));
+        }
+        else
+        {
+            selectedUnit = null;
+            HighlightTiles(new List<GameTile> {selectedTile});
         }
     }
-    */
+
+    public void TileRightClicked(Vector2Int tileCoords)
+    {
+        GameTile selectedTile = gameTiles[tileCoords.x, tileCoords.y];
+        if (selectedUnit != null)
+        {
+            Vector2Int unitCoords = selectedUnit.GetCoords();
+            MoveUnit(gameTiles[unitCoords.x, unitCoords.y], selectedTile);
+        }
+        UnhighlightTiles(highlightedTiles);
+    }
 
     public void SetPlayerSpawnWidth(int width)
     {
         playerSpawnWidth = width;
     }
-
 
     /// <summary>
     /// Creates a unitGame on the input coordinates
@@ -218,7 +240,7 @@ public class MapManager : MonoBehaviour
         GameTile previousTile;
         GameTile currentTile = unitTile;
 
-        int count = Mathf.Min(path.Count, unitTile.GetUnit().GetRange());
+        int count = Mathf.Min(path.Count, unitTile.GetUnit().GetMovementRange());
         Debug.LogFormat("Max movement range: {0}", count);
         while (count > 0)
         {
@@ -469,13 +491,17 @@ public class MapManager : MonoBehaviour
         {
             if (setup && tile.GetMatrixCoords().x < playerSpawnWidth)
             {
-                tile.HighlightTile(setup);
                 if (!highlightedTiles.Contains(tile))
                 {
                     highlightedTiles.Add(tile);
                 }
+                tile.HighlightTile(setup);
             }
-            
+            else if (!setup)
+            {
+                tile.HighlightTile(setup);
+                highlightedTiles.Add(tile);
+            }
         }
     }
 
@@ -489,7 +515,7 @@ public class MapManager : MonoBehaviour
         bool spawn = EncounterManager.encounterManager.setupPhase;
         if (tileList == null)
         {
-            Debug.LogError("UnhighlightTiles - input list is null");
+            Debug.Log("UnhighlightTiles - input list is null");
             return;
         }
 
@@ -497,7 +523,7 @@ public class MapManager : MonoBehaviour
         {
             if (tileList[i] != null && highlightedTiles.Contains(tileList[i]))
             {
-                Debug.LogFormat("Unhighlighting tile ({0})", tileList[i].GetMatrixCoords().ToString());
+                //Debug.LogFormat("Unhighlighting tile ({0})", tileList[i].GetMatrixCoords().ToString());
                 tileList[i].UnHighlightTile(spawn);
             }
         }
@@ -731,51 +757,61 @@ public class MapManager : MonoBehaviour
 
     public IEnumerator SelectFromUnits(List<UnitObject> unitList, bool target)
     {
-        selectedTile = null;
+        string text = "";
         UnhighlightTiles(highlightedTiles);
         if (highlightedTiles.Count > 0)
         {
             Debug.LogFormat("More than 0 tiles highlighted: {0}", highlightedTiles.Count);
         }
-        bool highlighted = false;
         List<GameTile> tiles = new List<GameTile>();
-        if (!highlighted)
+        foreach (UnitObject unit in unitList)
         {
-            foreach (UnitObject unit in unitList)
-            {
-                Vector2Int coords = unit.GetCoords();
-                tiles.Add(gameTiles[coords.x, coords.y]);
-            }
-            if (target)
-            {
-                foreach (GameTile tile in tiles)
-                {
-                    tile.SetHighlightColour(Color.red);
-                }
-                HighlightTiles(tiles);
-            }
-            else
-            {
-                foreach (GameTile tile in tiles)
-                {
-                    tile.SetHighlightColour(Color.blue);
-                }
-                HighlightTiles(tiles);
-            }
-            highlighted = true;
+            Vector2Int coords = unit.GetCoords();
+            tiles.Add(gameTiles[coords.x, coords.y]);
         }
-        while (!unitList.Contains(selectedUnit))
+        if (target)
         {
-            // if other tile selected, 
-            if (selectedTile != null)
+            Debug.Log("searching for target");
+            text = "target";
+            foreach (GameTile tile in tiles)
             {
-                EncounterManager.encounterManager.cardFailed = true;
-                yield break;
+                tile.SetHighlightColour(Color.red);
             }
+            HighlightTiles(tiles);
+        }
+        else
+        {
+            Debug.Log("searching for user");
+            text = "user";
+            foreach (GameTile tile in tiles)
+            {
+                tile.SetHighlightColour(Color.blue);
+            }
+            HighlightTiles(tiles);
+        }
+        unitSelectionInProgress = true;
+        unitSelectionFailed = false;
 
-            Debug.LogAssertion("Waiting for target");
-            yield return null;
+        selectedTile = null;
+        selectedUnit = null;
+        yield return new WaitUntil(() => selectedTile != null);
+        selectedUnit = selectedTile.GetUnit();
+        if (!unitList.Contains(selectedUnit))
+        {
+            Debug.Log("Clicked off of unit");
+            unitSelectionInProgress = false;
+            unitSelectionFailed = true;
+            Debug.Log("unit selection failed to find a unit");
+            EncounterManager.encounterManager.cardFailed = true;
+            unitsMovable = true;
+            yield break;
         }
+        else
+        {
+            unitSelectionInProgress = false;
+            Debug.Log("unit selected");
+        }
+        Debug.LogFormat("selectedUnit : {0}", selectedUnit.name.ToString());
         if (target)
         {
             EncounterManager.encounterManager.cardTarget = selectedUnit;
