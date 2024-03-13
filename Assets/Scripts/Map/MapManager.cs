@@ -1,4 +1,5 @@
 using JetBrains.Annotations;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,7 @@ using UnityEngine.Tilemaps;
 using UnityEngine.WSA;
 using Utils;
 using static UnityEditor.Progress;
+using Random = UnityEngine.Random;
 
 public class MapManager : MonoBehaviour
 {
@@ -51,57 +53,6 @@ public class MapManager : MonoBehaviour
     public bool unitsMovable = true;
     private bool unitSelectionFailed;
     private bool unitSelectionInProgress;
-
-
-
-    /*
-    public void TileClicked(GameTile inputTile, bool leftClicked)
-    {
-        UnhighlightTiles(highlightedTiles);
-        if (leftClicked)
-        {
-            if (inputTile != selectedTile)
-            {
-                if (selectedTile != null)
-                {
-                    selectedTile.UnHighlightTile(EncounterManager.encounterManager.setupPhase);
-                }
-                selectedTile = inputTile;
-                selectedTile.HighlightTile(EncounterManager.encounterManager.setupPhase);
-                selectedUnit = selectedTile.GetUnit();
-            }
-            else
-            {
-                if (selectedTile != null)
-                {
-                    selectedTile.UnHighlightTile(EncounterManager.encounterManager.setupPhase);;
-                }
-                selectedUnit = null; 
-                selectedTile = null;
-            }
-            if (selectedUnit != null)
-            {
-                if (selectedUnit.playerUnit == false)
-                {
-                    selectedUnit = null;
-                }
-            }
-            if (selectedUnit != null)
-            {
-                HighlightTiles(GetTilesInRange(selectedTile, selectedUnit.GetMovementRange()));
-            }
-        }
-        else
-        {
-            if (selectedUnit != null)
-            {
-                MoveUnit(selectedTile, inputTile);
-            }
-        }
-        selectedCoords = selectedTile.GetMatrixCoords();
-
-    }
-    */
 
 
     public void TileLeftClicked(Vector2Int tileCoords)
@@ -272,8 +223,8 @@ public class MapManager : MonoBehaviour
         }
 
         // Change to true A*
-        // Give each node a value (path newCost) on the way through
-        // On way back, next node is the one with the lowest value
+        // Give each node a priority (path newCost) on the way through
+        // On way back, next node is the one with the lowest priority
 
 
         PriorityQueue<GameTile, float> fringe = new PriorityQueue<GameTile, float>();
@@ -746,7 +697,7 @@ public class MapManager : MonoBehaviour
 
     public void StartTestEncounter()
     {
-        EncounterManager.encounterManager.CreateEncounter(GameManager.gameManager.GetPlayerParty(), GameManager.gameManager.GetRandomParty());
+        EncounterManager.encounterManager.CreateEncounter(GameManager.gameManager.GetPlayerParty(), GameManager.gameManager.GetRandomParty(), (EnemyType)Random.Range(0, Enum.GetNames(typeof(CardType)).Length));
     }
 
     // Update is called once per frame

@@ -11,7 +11,7 @@ public class CardObject : ScriptableObject
     public int id = -1;
     private Card card;
 
-    [SerializeField] private CardAbility ability;
+    [SerializeField] private CardType cardType;
     public int attackDamage;
     public int shieldAmount;
     public int drawAmount;
@@ -44,9 +44,9 @@ public class CardObject : ScriptableObject
         this.card = card;
     }
 
-    public void SetAbility(CardAbility ability) { this.ability = ability; }
+    public void SetCardType(CardType ability) { this.cardType = ability; }
 
-    public CardAbility GetAbility() { return this.ability; }
+    public CardType GetCardType() { return this.cardType; }
 
     public void SetId(int id)
     {

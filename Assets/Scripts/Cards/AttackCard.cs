@@ -18,11 +18,11 @@ public class AttackCard : CardObject
         }
         if (range > 1)
         {
-            //ability = CardAbility.Ranged;
+            //cardType = CardType.Ranged;
         }
         else
         {
-            //ability = CardAbility.Melee;
+            //cardType = CardType.Attack;
         }
     }
 

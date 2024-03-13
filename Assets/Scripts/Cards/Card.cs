@@ -46,13 +46,13 @@ public class Card : MonoBehaviour
     public void SetRange(int movement) {  cardData.movement = movement; }
     */
 
-    public void SetAbility(CardAbility ability) { cardData.SetAbility(ability);}
-    public CardAbility GetAbility() { return cardData.GetAbility(); }
+    public void SetAbility(CardType ability) { cardData.SetCardType(ability);}
+    public CardType GetAbility() { return cardData.GetCardType(); }
 
     /*
-    public void AddAbility(OldCardAbility ability) {  cardData.ability.Add(ability); }
-    public void RemoveAbility(OldCardAbility ability) {  cardData.ability.Remove(ability); }
-    public List<OldCardAbility> GetAbilities() {  return cardData.ability; }
+    public void AddAbility(OldCardAbility cardType) {  cardData.cardType.Add(cardType); }
+    public void RemoveAbility(OldCardAbility cardType) {  cardData.cardType.Remove(cardType); }
+    public List<OldCardAbility> GetAbilities() {  return cardData.cardType; }
     */
     public void PlayCard()
     {

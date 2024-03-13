@@ -23,6 +23,8 @@ public class GameManager : MonoBehaviour
 
     [Header("General")]
     [SerializeField] List<Party> enemyParties = new List<Party>();
+    public const float AGGRESSIVE_TILE_DISTANCE = 1;
+    public const float DEFENSIVE_TILE_DISTANCE = 1;
 
     [Header("Player")]
     [SerializeField] Party playerParty = null;

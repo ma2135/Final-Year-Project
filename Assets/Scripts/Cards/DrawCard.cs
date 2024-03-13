@@ -18,7 +18,7 @@ public class DrawCard : CardObject
                 GameManager.cardIdCount++;
             }
         }
-        //ability = CardAbility.DrawCard;
+        //cardType = CardType.DrawCard;
     }
 
     /*

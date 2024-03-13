@@ -19,7 +19,7 @@ public class UtilityCard : CardObject
                 GameManager.cardIdCount++;
             }
         }
-        //ability = CardAbility.Utility;
+        //cardType = CardType.Utility;
     }
 
     public void SetHealingAmount(int healingAmount) { this.healingAmount = healingAmount; }

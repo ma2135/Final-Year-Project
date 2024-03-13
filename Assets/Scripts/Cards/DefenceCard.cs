@@ -18,7 +18,7 @@ public class DefenceCard : CardObject
                 GameManager.cardIdCount++;
             }
         }
-        //ability = CardAbility.Defence;
+        //cardType = CardType.Defence;
     }
     new public void PlayCardEffect(UnitObject activator, UnitObject target)
     {

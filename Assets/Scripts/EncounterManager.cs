@@ -1,8 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
+using Utils;
 
 public class EncounterManager : MonoBehaviour
 {
@@ -11,12 +11,18 @@ public class EncounterManager : MonoBehaviour
     [SerializeField] private Party playerParty;
     [SerializeField] private Party defenders;
 
+    [Header("Cards")]
     [SerializeField] private DeckObject playersDeck;
     [SerializeField] private DeckObject defendersDeck;
     [SerializeField] private List<CardObject> playersDiscardDeck = new List<CardObject>();
     [SerializeField] private List<CardObject> defendersDiscardDeck = new List<CardObject>();
     [SerializeField] public CardObject[] playersHand;// = new CardObject[];
     [SerializeField] private CardObject[] defendersHand;// = new CardObject[];
+
+    [SerializeField] private int[] defensiveCardValues = new int[Enum.GetNames(typeof(CardType)).Length];
+    [SerializeField] private int[] aggressiveCardValues = new int[Enum.GetNames(typeof(CardType)).Length];
+
+    private int[] baseCardValues = new int[Enum.GetNames(typeof(CardType)).Length];
 
     private GameTile[,] playerSpawnZone;
     private GameTile[,] defendersSpawnZone;
@@ -26,7 +32,11 @@ public class EncounterManager : MonoBehaviour
     private bool firstTurn = true;
     private bool endTurn = false;
     [SerializeField] private GameObject hand;
-    private GameState currentGameState;
+    private EnemyType enemyType;
+    private int enemyActions = 4;
+    public float aggressiveDistanceConstant = 1;
+    public float defensiveDistanceConstant = 1;
+    private const float LARGE_DISTANCE = 9999;
 
     public UnitObject cardActivator = null;
     public UnitObject cardTarget = null;
@@ -39,10 +49,12 @@ public class EncounterManager : MonoBehaviour
     private void Start()
     {
         encounterManager = this;
+        aggressiveDistanceConstant = GameManager.AGGRESSIVE_TILE_DISTANCE;
+        defensiveDistanceConstant = GameManager.DEFENSIVE_TILE_DISTANCE;
     }
 
 
-    public void CreateEncounter(Party player, Party defenders)
+    public void CreateEncounter(Party player, Party defenders, EnemyType enemyType)
     {
         Debug.Log("========== STARTING ENCOUNTER ==========");
         playersHand = new CardObject[GameManager.gameManager.playerDrawSize];
@@ -180,6 +192,8 @@ public class EncounterManager : MonoBehaviour
                 MapManager.mapManager.CreateUnit(positions[i], units[i]);
             }
         }
+        this.enemyType = enemyType;
+        baseCardValues = GetBaseCardValues();
 
     }
 
@@ -309,6 +323,10 @@ public class EncounterManager : MonoBehaviour
     }
     #endregion
 
+    /// <summary>
+    /// The start of an encounter. Controls the turns etc.
+    /// </summary>
+    /// <returns></returns>
     public IEnumerator StartEncounter()
     {
         setupPhase = false;
@@ -337,10 +355,9 @@ public class EncounterManager : MonoBehaviour
                 {
                     DrawCard(defendersDeck, 2);
                 }
-                Debug.LogAssertionFormat("Starting AI turn");
                 StartCoroutine(StartTurn(playersTurn));
                 // AI turn
-
+                yield return StartCoroutine(AITurn());
                 StartCoroutine(EndTurn());
 
             }
@@ -350,8 +367,8 @@ public class EncounterManager : MonoBehaviour
                 {
                     DrawCard(playersDeck, 2);
                 }
-                Debug.LogAssertionFormat("Starting players turn");
                 StartCoroutine(StartTurn(playersTurn));
+                Debug.LogAssertionFormat("Starting players turn");
                 while (playersTurn)
                 {
                     yield return null;
@@ -365,21 +382,35 @@ public class EncounterManager : MonoBehaviour
             }
         }
         EndEncounter();
-
     }
 
+    /// <summary>
+    /// The end of the encounter.
+    /// Any end of encounter events happen here
+    /// </summary>
     public void EndEncounter()
     {
         Debug.LogAssertionFormat("End of encounter");
+
+        //Player gets loot
+        //Players units heal
+        foreach(UnitObject unit in playerParty.GetAllUnits())
+        {
+            unit.health = unit.maxHealth;
+        }
         hand.gameObject.SetActive(false);
     }
 
+    /// <summary>
+    /// The start of a turn. Any start of turn events happen here
+    /// </summary>
+    /// <param name="playerTurn"></param>
+    /// <returns></returns>
     public IEnumerator StartTurn(bool playerTurn)
     {
-        // Any start of turn events happen here
         endTurn = false;
         Debug.Log("========== START OF TURN ==========");
-        UIManager.uiManager.DisplayCurrentTurn(playersTurn);
+        UIManager.uiManager.DisplayCurrentTurn(playerTurn);
         while (endTurn == false)
         {
             yield return null;
@@ -387,9 +418,13 @@ public class EncounterManager : MonoBehaviour
         yield break;
     }
 
+    /// <summary>
+    /// The end of a turn
+    /// Any end of turn events happen here
+    /// </summary>
+    /// <returns></returns>
     public IEnumerator EndTurn()
     {
-        // Any end of turn events happen here
         endTurn = true;
         playersTurn = !playersTurn;
 
@@ -398,6 +433,11 @@ public class EncounterManager : MonoBehaviour
 
 
     //https://www.youtube.com/watch?v=kUP6OK36nrM&ab_channel=GameDevBeginner
+    /// <summary>
+    /// Play a card. A user and target will need to be specified
+    /// </summary>
+    /// <param name="cardIndex"></param>
+    /// <returns></returns>
     public IEnumerator PlayCard(int cardIndex)
     {
         // yield return null  ->  suspends coroutine until next frame, can be used to make update loops - loops can persist over several frames
@@ -417,13 +457,6 @@ public class EncounterManager : MonoBehaviour
 
         MapManager.mapManager.unitsMovable = false;
         MapManager.mapManager.selectedUnit = null;
-        /*
-        Debug.LogFormat("playersHand null: {0}", playersHand == null);
-        Debug.LogFormat("playersHand.Length: {0}", playersHand.Length);
-        Debug.LogFormat("cardIndex: {0}", cardIndex);
-        Debug.LogFormat("playersHand[{0}] null: {1}", cardIndex, playersHand[cardIndex] == null);
-        Debug.LogFormat("card Index ({0}) selected, card: {1}", cardIndex, playersHand[cardIndex].name);
-        */
         DeckObject deck;
         if (playersTurn)
         {
@@ -433,11 +466,9 @@ public class EncounterManager : MonoBehaviour
         {
             deck = defendersDeck;
         }
-
         cardFailed = false;
         List<UnitObject> activators;
         List<UnitObject> targets;
-
         activators = GetPossibleActivatorUnits(card, playersTurn);
         Debug.LogFormat("({0}) units can activate the card", activators.Count);
         if (activators.Count == 0)
@@ -452,7 +483,7 @@ public class EncounterManager : MonoBehaviour
             yield break;
         }
         Debug.LogFormat("cardActivator: {0}", cardActivator.name.ToString());
-        targets = GetPossibleTargetUnits(cardActivator.GetCoords(), card, playersTurn);
+        targets = GetPossibleTargetUnits(MapManager.mapManager.GetTilesInRange(gameTiles[cardActivator.GetCoords().x, cardActivator.GetCoords().y], card.range), card, playersTurn);
         Debug.LogFormat("({0}) units can be targeted by the card", targets.Count);
         if (targets.Count == 0)
         {
@@ -464,12 +495,7 @@ public class EncounterManager : MonoBehaviour
             Debug.LogFormat("No target was selected");
             yield break;
         }
-
-
-        // call play card with these board
-
         card.PlayCardEffect(cardActivator, cardTarget);
-
         UIManager.uiManager.RemoveCardFromHand(cardIndex);
         DiscardCard(card);
         // tile shading back to normal
@@ -477,7 +503,7 @@ public class EncounterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns a list of all board that can activate the card used
+    /// Returns a list of all units that can activate the card
     /// </summary>
     /// <param name="card"></param>
     /// <param name="player"></param>
@@ -517,22 +543,23 @@ public class EncounterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns a list of all board that the card can target
+    /// Returns a list of all units that the card can target in the tiles given
     /// </summary>
     /// <param name="centerTile"></param>
     /// <param name="card"></param>
     /// <param name="player"></param>
     /// <returns></returns>
-    public List<UnitObject> GetPossibleTargetUnits(Vector2Int centerTile, CardObject card, bool player)
+    private List<UnitObject> GetPossibleTargetUnits(List<GameTile> tiles, CardObject card, bool player)
     {
+
         // get enemies within card range of centerTile
-        if (centerTile == null || card == null)
+        if (tiles == null || card == null || tiles.Count == 0)
         {
-            Debug.LogError("something is null");
+            Debug.LogError("An input to possible targets is null or 0");
         }
         List<UnitObject> possibleTargets = new List<UnitObject>();
         Party targetParty;
-        if (player)
+        if (player && card.GetCardType() == CardType.Attack || !player && (card.GetCardType() == CardType.Utility || card.GetCardType() == CardType.Defence))
         {
             targetParty = defenders;
         }
@@ -540,10 +567,7 @@ public class EncounterManager : MonoBehaviour
         {
             targetParty = playerParty;
         }
-
-        List<GameTile> tiles = MapManager.mapManager.GetTilesInRange(gameTiles[centerTile.x, centerTile.y], card.range);
-
-        foreach(GameTile tile in tiles)
+        foreach (GameTile tile in tiles)
         {
             if (tile.GetUnit() != null && targetParty.GetAllUnits().Contains(tile.GetUnit()))
             {
@@ -553,6 +577,12 @@ public class EncounterManager : MonoBehaviour
         return possibleTargets;
     }
 
+    #region Card Abilities
+    /// <summary>
+    /// Applied damage to a unit
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="damageAmount"></param>
     public void DamageUnit(UnitObject unit, int damageAmount)
     {
         Debug.LogFormat("Applying ({0}) damage to unit ({1})", damageAmount, unit.name);
@@ -590,12 +620,22 @@ public class EncounterManager : MonoBehaviour
         // Change current game state int[,]s ro reflect the change in unit health
     }
 
+    /// <summary>
+    /// Applied a shield value to a unit
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="shieldAmount"></param>
     public void ShieldUnit(UnitObject unit, int shieldAmount)
     {
         Debug.LogFormat("Applying {(0)} shield to unit {(1)}", shieldAmount, unit.name.ToString());
         unit.shield += shieldAmount;
     }
 
+    /// <summary>
+    /// Heals a units 
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="healAmount"></param>
     public void HealUnit(UnitObject unit, int healAmount)
     {
         Debug.LogFormat("Applying {(0)} healing to unit {(1)}", healAmount, unit.name.ToString());
@@ -606,203 +646,361 @@ public class EncounterManager : MonoBehaviour
         }
     }
 
+    #endregion
 
-    private void UpdateGameState()
+    /// <summary>
+    /// Creates a graph of all possible card plays and unit moves (unit no more cards can be played)
+    /// </summary>
+    /// <param name="previousMove"></param>
+    /// <param name="cardIndex"></param>
+    /// <param name="hand"></param>
+    /// <param name="player"></param>
+    /// <param name="actions"></param>
+    /// <returns></returns>
+    public void BuildPossibleMoveGraph(PossibleMove previousMove, int cardIndex, CardObject[] hand, bool player, int actions)
     {
-        int[,] unitArray = new int[gameTiles.GetLength(0), gameTiles.GetLength(1)];
-        int[,] movementArray = new int[gameTiles.GetLength(0), gameTiles.GetLength(1)];
-        List<Vector2Int> unitPositions = new List<Vector2Int>();
-        foreach (UnitObject unit in playerParty.GetAllUnits())
+        CardObject card = hand[cardIndex];
+        if (card.cost < actions)
         {
-            Vector2Int unitTile = unit.GetCoords();
-            unitArray[unitTile.x, unitTile.y] = -unit.health;
-            movementArray[unitTile.x, unitTile.y] = unit.movement;
-            unitPositions.Add(unit.GetCoords());
+            return;
         }
-        foreach (UnitObject unit in defenders.GetAllUnits())
+        List<PossibleMove> possibleMoves = new List<PossibleMove>();
+
+        //get possibleActivators that can be targeted with the card taking movement into account
+        List<UnitObject> possibleActivators = GetPossibleActivatorUnits(card, player);
+        PossibleMove newMove;
+        foreach(UnitObject unit in possibleActivators)
         {
-            Vector2Int unitTile = unit.GetCoords();
-            unitArray[unitTile.x, unitTile.y] = unit.health;
-            movementArray[unitTile.x, unitTile.y] = unit.movement;
-            unitPositions.Add(unit.GetCoords());
-        }
-
-        GameState initialState = new GameState(unitArray, movementArray, unitPositions);
-
-        initialState.GetAvailableGameStates(playersTurn);
-        currentGameState = initialState;
-    }
-
-    private void AITurn(EnemyType enemy)
-    {
-        // Requires:
-        //  - board positions
-        //  - hand
-        //  - possible moves
-        //      PathToTile().count <= unit movement movement
-
-
-        // +ve = AI, -ve = player
-        int[,] unitArray = new int[gameTiles.GetLength(0), gameTiles.GetLength(1)];
-        int[,] movementArray = new int[gameTiles.GetLength(0), gameTiles.GetLength(1)];
-        List<Vector2Int> unitPositions = new List<Vector2Int>();
-        foreach (UnitObject unit in playerParty.GetAllUnits())
-        {
-            Vector2Int unitTile = unit.GetCoords();
-            unitArray[unitTile.x, unitTile.y] = -unit.health;
-            movementArray[unitTile.x, unitTile.y] = unit.movement;
-            unitPositions.Add(unit.GetCoords());
-        }
-        foreach (UnitObject unit in defenders.GetAllUnits())
-        {
-            Vector2Int unitTile = unit.GetCoords();
-            unitArray[unitTile.x, unitTile.y] = unit.health;
-            movementArray[unitTile.x, unitTile.y] = unit.movement;
-            unitPositions.Add(unit.GetCoords());
-        }
-
-        GameState initialState = new GameState(unitArray, movementArray, unitPositions);
-
-        initialState.GetAvailableGameStates(playersTurn);
-        List<GameStateAndScore> scoresList = new List<GameStateAndScore>();
-        foreach (GameState state in initialState.availableGameStates)
-        {
-            scoresList.Add(new GameStateAndScore(ScoreGameState(enemy), state));
-        }
-        initialState.ScoreStates(scoresList);
-
-    }
-
-
-    private void Minimax(int depth, int player, int alpha, int beta)
-    {
-        int bestScore = 0;
-
-
-
-    }
-
-
-    public int ScoreGameState(EnemyType enemyType)
-    {
-        int score = 0;
-        if (enemyType == EnemyType.Agressive)
-        {
-            foreach (UnitObject unit in playerParty.GetAllUnits())
+            List<Vector2Int> movesList = MapManager.mapManager.GetTilesInRange(unit.GetCoords(), unit.GetMovementRange());
+            //List of all tiles that can be targetted
+            List <Vector2Int> vectorList = MapManager.mapManager.GetTilesInRange(unit.GetCoords(), unit.GetMovementRange() + card.range);
+            List<GameTile> tileList = new List<GameTile>();
+            foreach (Vector2Int vector in vectorList)
             {
-                score = score - unit.health;
+                tileList.Add(gameTiles[vector.x, vector.y]);
             }
-        }
-        if (enemyType == EnemyType.Defensive)
-        {
-            foreach (UnitObject unit in defenders.GetAllUnits() )
+            //Get targets from list of targettable tiles
+            List<UnitObject> possibleTargets = GetPossibleTargetUnits(tileList, card, player);
+            // Finds where the unit can move to to activate the card on the target
+            foreach (UnitObject target in possibleTargets)
             {
-                score = score + unit.health;
-            }
-        }
-        return score;
-    }
-
-}
-
-
-public class GameStateAndScore
-{
-    public int score;
-    public GameState state;
-    public GameStateAndScore(int score, GameState state)
-    {
-        this.score = score;
-        this.state = state;
-    }
-}
-
-public class GameState
-{
-    public int[,] board;
-    public List<Vector2Int> unitPositions;
-    public int[,] movement;
-    public CardObject[] hand;
-    public List<GameState> availableGameStates = new List<GameState>();
-    public List<GameStateAndScore> scoredGameStates = new List<GameStateAndScore>();
-
-    MapManager mapManager;
-
-    public GameState(int[,] board, int[,] movement, List<Vector2Int> unitPositions)
-    {
-        this.board = board;
-        this.movement = movement;
-        this.unitPositions = unitPositions;
-        mapManager = MapManager.mapManager;
-    }
-
-    public void ScoreStates(List<GameStateAndScore> scores)
-    {
-        scoredGameStates = scores;
-    }
-
-    public bool UniqueBoardCheck(int[,] board1, int[,] board2)
-    {
-        for (int x = 0; x < board1.Length; x++)
-        {
-            for (int y = 0; y < board1.Length; y++)
-            {
-                if (board1[x, y] != board2[x, y])
+                List<Vector2Int> targetRangeVector = MapManager.mapManager.GetTilesInRange(target.GetCoords(), card.range);
+                List<Vector2Int> possibleMoveVector = new List<Vector2Int>();
+                foreach (Vector2Int vector in targetRangeVector)
                 {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    public void GetAvailableGameStates(bool player)
-    {
-        foreach (Vector2Int unitPos in unitPositions)
-        {
-            if ((player && board[unitPos.x, unitPos.y] < 0) || (!player && board[unitPos.x, unitPos.y] > 0))
-            {
-                if (movement[unitPos.x, unitPos.y] > 0)
-                {
-                    // Adds new 
-                    List<GameTile> tiles = mapManager.GetTilesInRange(mapManager.GetGameTiles()[unitPos.x, unitPos.y], movement[unitPos.x, unitPos.y]);
-                    foreach (GameTile tile in tiles)
+                    if (movesList.Contains(vector))
                     {
-                        availableGameStates.Add(MoveUnit(board, movement, unitPos, tile.GetMatrixCoords()));
+                        possibleMoveVector.Add(vector);
                     }
                 }
+                float[] temp = GetBestCardUseTile(possibleMoveVector, gameTiles[unit.GetCoords().x, unit.GetCoords().y], gameTiles[target.GetCoords().x, target.GetCoords().y]);
+                newMove = new PossibleMove(previousMove, unit, target, card, hand, gameTiles[(int)temp[0], (int)temp[1]], GetCardPriority(card) + temp[2]);
+                Debug.LogFormat("Adding new move to move graph");
+                newMove.DisplayMove();
+                // possibleMoveVector is a list of moves against all possible targets. These moves have the best move locations for targetting that target
+                possibleMoves.Add(newMove);
+            }
+                // best tile for that target
+            //if enemy on tile, add possible moves
+        }
+        CardObject[] newHand = new CardObject[hand.Length];
+        hand.CopyTo(newHand, 0);
+        newHand[cardIndex] = null;
+        for (int i = 0; i < newHand.Length; i++)
+        {
+            if (newHand[i] != null)
+            {
+                // Create graph verticies for each terget the ability was used on
+                foreach (PossibleMove move in possibleMoves)
+                {
+                    BuildPossibleMoveGraph(move, i, newHand, player, actions - card.cost);
+                }
             }
         }
     }
 
-    private GameState MoveUnit(int[,] array, int[,] movement, Vector2Int startCell, Vector2Int endCell)
+    /// <summary>
+    /// Get the best tile to move to to use the card (returns float[xCoord, yCoord, priority value])
+    /// </summary>
+    /// <param name="possibleTileVector"></param>
+    /// <param name="unitTile"></param>
+    /// <param name="targetTile"></param>
+    /// <returns></returns>
+    private float[] GetBestCardUseTile(List<Vector2Int> possibleTileVector, GameTile unitTile, GameTile targetTile)
     {
-        int[,] newArray = new int[array.GetLength(0), array.GetLength(1)];
-        array.CopyTo(newArray, 0);
-        int[,] newMovement = new int[movement.GetLength(0), movement.GetLength(1)];
-        array.CopyTo(newMovement, 0);
-        // Move array and movement values from cell to cell
-        newArray[endCell.x, endCell.y] = newArray[startCell.x, startCell.y];
-        newArray[startCell.x, startCell.y] = 0;
-        newMovement[endCell.x, endCell.y] = newMovement[startCell.x, startCell.y] - Mathf.RoundToInt(mapManager.CubicDistance(mapManager.MatrixToCubic(startCell), mapManager.MatrixToCubic(endCell)));
-        newMovement[startCell.x, startCell.y] = 0;
-        if (newMovement[endCell.x, endCell.y] < 0)
+        PriorityQueue<Vector2Int, float> possibleTiles = new PriorityQueue<Vector2Int, float>();
+        float priority = 0;
+        foreach (Vector2Int vector in possibleTileVector)
         {
-            Debug.LogErrorFormat("Movement cell in new GameState < 0 ({0})", newMovement[endCell.x, endCell.y]);
-        }
-        List<Vector2Int> unitList = new List<Vector2Int>();
-        foreach (Vector2Int pos in unitPositions)
-        {
-            if (pos == startCell)
+            float targetDistance = MapManager.mapManager.CubicDistance(MapManager.mapManager.MatrixToCubic(unitTile.GetMatrixCoords()), MapManager.mapManager.MatrixToCubic(targetTile.GetMatrixCoords()));
+            //Disatnce to closest friendly
+            float closestUnit = LARGE_DISTANCE;
+            foreach (UnitObject unit in defenders.GetAllUnits())
             {
-                unitList.Add(endCell);
+                if (unit != unitTile.GetUnit())
+                {
+                    closestUnit = MathF.Min(MapManager.mapManager.CubicDistance(MapManager.mapManager.MatrixToCubic(unitTile.GetMatrixCoords()), MapManager.mapManager.MatrixToCubic(unit.GetCoords())), closestUnit);
+                }
+            }
+            switch (enemyType)
+            {
+                case EnemyType.Agressive:
+                    // minimise distance between unit and target and other friendly possibleActivators
+                    //Distance to target
+                    priority = (1 + GameManager.AGGRESSIVE_TILE_DISTANCE / closestUnit) + (1 + GameManager.AGGRESSIVE_TILE_DISTANCE / targetDistance);
+                    break;
+                case EnemyType.Defensive:
+                    // minimise distance to other friendly possibleActivators while maximising distance to target
+                    priority = (1 + GameManager.DEFENSIVE_TILE_DISTANCE / closestUnit) + (1 - GameManager.DEFENSIVE_TILE_DISTANCE / targetDistance);
+                    break;
+            }
+            possibleTiles.Enqueue(vector, priority);
+        }
+        Vector2Int tileVector = possibleTiles.Dequeue();
+        return new float[] { tileVector.x, tileVector.y, priority };
+    }
+
+    /// <summary>
+    /// Get the priority (how much the AI wants to play the card) of the input card
+    /// </summary>
+    /// <param name="card"></param>
+    /// <returns></returns>
+    private float GetCardPriority(CardObject card)
+    {
+        // base card priority + amount of that affect (e.g. damageAmount)
+        float output = baseCardValues[(int)card.GetCardType()];
+        int cardEffect = 0;
+        switch (card.GetCardType())
+        {
+            case CardType.Attack:
+                cardEffect = card.attackDamage;
+                break;
+            case CardType.Utility:
+                cardEffect = card.healingAmount;
+                break;
+            case CardType.Defence:
+                cardEffect = card.shieldAmount;
+                break;
+            case CardType.DrawCard:
+                cardEffect = 2 * card.drawAmount;
+                break;
+        }
+        output += 0.5f * cardEffect;
+        return output;
+    }
+
+    /// <summary>
+    /// Sets how important the AI thinks different cards are. Changes with different personalities
+    /// </summary>
+    /// <returns></returns>
+    private int[] GetBaseCardValues()
+    {
+        // switch statement allows expansion
+        switch (enemyType)
+        {
+            case EnemyType.Agressive:
+                return aggressiveCardValues;
+            case EnemyType.Defensive:
+                return defensiveCardValues;
+        }
+        return null;
+    }
+
+    private IEnumerator AITurn()
+    {
+        Debug.LogAssertionFormat("Starting AI turn");
+        // Get values for all cards in hand
+        // Order cards (ordered list?, Priority queue?)
+        // 
+        // Get possible possibleActivators for each card
+        // order cards based on distances to player and AI possibleActivators
+
+        // Reorder after each card played (unit movement may mean some cards cannot be played)
+
+        PriorityQueue<CardObject, float> baseQueue = new PriorityQueue<CardObject, float>();
+        foreach (CardObject card in defendersHand)
+        {
+            baseQueue.Enqueue(card, baseCardValues[((int)card.GetCardType())]);
+        }
+        PossibleMove rootNode = new PossibleMove(null, null, null, null, defendersHand, null, 0);
+        CardObject[] tempHand = new CardObject[defendersHand.Length];
+        defendersHand.CopyTo(tempHand, 0);
+        Debug.LogFormat("Building possible moves graph");
+        for (int i = 0; i < defendersHand.Length; i++)
+        {
+            BuildPossibleMoveGraph(rootNode, i, rootNode.hand, false, enemyActions);
+        }
+        Debug.LogFormat("Searching possible moves graph");
+        Queue<PossibleMove> possibleMoves = ExpandMove(rootNode);
+        PossibleMove move;
+
+        Debug.LogFormat("Moving");
+        while (possibleMoves.Count > 0)
+        {
+            move = possibleMoves.Dequeue();
+            move.DisplayMove();
+            move.PlayMove();
+            yield return new WaitForSecondsRealtime(0.5f);
+        }
+        Debug.LogAssertionFormat("Ending AI turn");
+    }
+
+    /// <summary>
+    /// Fully expands a node of possible moves
+    /// </summary>
+    /// <param name="move"></param>
+    /// <returns></returns>
+    private Queue<PossibleMove> ExpandMove(PossibleMove move)
+    {
+        List<PossibleMove> fringe = new List<PossibleMove>();
+        Queue<PossibleMove> moveQueue = new Queue<PossibleMove>();
+        moveQueue.Enqueue(move);
+        foreach(MoveVertex vertex in move.connectedMoves)
+        {
+            if (vertex != null)
+            {
+                fringe.Add(vertex.GetNextMove());
+            }
+        }
+        Queue<PossibleMove> tempQueue;
+        Queue<PossibleMove> bestQueue = new Queue<PossibleMove>();
+        float bestValue = 0;
+        float tempValue;
+        foreach(PossibleMove possible in fringe)
+        {
+            tempQueue = ExpandMove(possible);
+            tempValue = GetMovePriority(tempQueue);
+            if (tempValue > bestValue)
+            {
+                bestValue = tempValue;
+                bestQueue = tempQueue;
+            }
+        }
+        while (bestQueue.Count > 0)
+        {
+            moveQueue.Enqueue(bestQueue.Dequeue());
+        }
+        return moveQueue;
+    }
+
+    /// <summary>
+    /// Gets the priority values for all moves in a movement queue
+    /// </summary>
+    /// <param name="moveQueue"></param>
+    /// <returns></returns>
+    private float GetMovePriority(Queue<PossibleMove> moveQueue)
+    {
+        float value = 0;
+        int moveQueueCount = moveQueue.Count;
+        for (int i = 0; i < moveQueueCount; i++)
+        {
+            PossibleMove move = moveQueue.Dequeue();
+            value += move.priority;
+            moveQueue.Enqueue(move);
+        }
+        return value;
+    }
+}
+
+
+public class PossibleMove
+{
+    public UnitObject unit;
+    public UnitObject target;
+    public CardObject card;
+    //The hand after the move
+    public CardObject[] hand;
+    public GameTile destinationTile;
+
+    public float priority;
+
+    public MoveVertex previousMoveVertex;
+    public List<MoveVertex> connectedMoves;
+
+    public PossibleMove(PossibleMove previousMove, UnitObject unit, UnitObject target, CardObject card, CardObject[] hand, GameTile destinationTile, float value)
+    {
+        this.unit = unit;
+        this.target = target;
+        this.card = card;
+        this.hand = hand;
+        this.destinationTile = destinationTile;
+        if (previousMove != null)
+        {
+            this.previousMoveVertex = new MoveVertex(previousMove, this);
+        }
+        this.priority = value;
+    }
+
+    public void PlayMove()
+    {
+        //Move unit to tile
+        MapManager.mapManager.MoveUnit(MapManager.mapManager.GetGameTiles()[unit.GetCoords().x, unit.GetCoords().y], destinationTile);
+
+        //Play card
+        card.PlayCardEffect(unit, target);
+
+        //Discard the card
+        EncounterManager.encounterManager.DiscardCard(card);
+    }
+
+
+    public void DisplayMove()
+    {
+        string hand = "[";
+        for (int i = 0; i < this.hand.Length; i++)
+        {
+            if (this.hand[i] != null)
+            {
+                hand += this.hand[i].cardName;
             }
             else
             {
-                unitList.Add(pos);
+                hand += "null";
+            }
+            if (i != this.hand.Length - 1)
+            {
+                hand += ", ";
             }
         }
-        return new GameState(newArray, newMovement, unitList);
+        hand += "]";
+        Debug.LogFormat("Displaying possible move\nCard: {0} || Hand after card: {1}\nUnit: {2} || Target: {3}", card.name.ToString(), hand, unit.name, target.name);
+    }
+}
+
+public class MoveVertex
+{
+    public PossibleMove previousMove;
+    public PossibleMove newMove;
+
+    public MoveVertex(PossibleMove previousMove, PossibleMove newMove)
+    {
+        this.previousMove = previousMove;
+        this.newMove = newMove;
+        newMove.previousMoveVertex = this;
+        previousMove.connectedMoves.Add(this);
     }
 
+    public PossibleMove GetNextMove()
+    {
+        return newMove;
+    }
+
+    public PossibleMove GetMove(PossibleMove currentMove)
+    {
+        if (currentMove == previousMove)
+        {
+            Debug.Log("Getting previous move");
+            return newMove;
+        }
+        else if (currentMove == newMove)
+        {
+            Debug.Log("Getting the next move");
+            return previousMove;
+        }
+        else
+        {
+            Debug.Log("Move could not be found");
+            return null;
+        }
+    }
 }

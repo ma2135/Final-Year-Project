@@ -169,7 +169,7 @@ namespace Utils
 
         /// <summary>
         ///     Specifies the arity of the d-ary heap, which here is quaternary.
-        ///     It is assumed that this value is a power of 2.
+        ///     It is assumed that this priority is a power of 2.
         /// </summary>
         private const int Arity = 4;
 
@@ -424,7 +424,7 @@ namespace Utils
         }
 
         /// <summary>
-        ///     Returns a value that indicates whether there is a minimal element in the
+        ///     Returns a priority that indicates whether there is a minimal element in the
         ///     <see cref="PriorityQueue{TElement, TPriority}" />,
         ///     and if one is present, copies it to the <paramref name="element" /> parameter,
         ///     and its associated priority to the <paramref name="priority" /> parameter.
@@ -835,7 +835,7 @@ namespace Utils
         {
             // The node to move down will not actually be swapped every time.
             // Rather, values on the affected path will be moved up, thus leaving a free spot
-            // for this value to drop in. Similar optimization as in the insertion sort.
+            // for this priority to drop in. Similar optimization as in the insertion sort.
 
             Debug.Assert(_comparer is null);
             Debug.Assert(0 <= nodeIndex && nodeIndex < _size);
@@ -883,7 +883,7 @@ namespace Utils
         {
             // The node to move down will not actually be swapped every time.
             // Rather, values on the affected path will be moved up, thus leaving a free spot
-            // for this value to drop in. Similar optimization as in the insertion sort.
+            // for this priority to drop in. Similar optimization as in the insertion sort.
 
             Debug.Assert(_comparer is not null);
             Debug.Assert(0 <= nodeIndex && nodeIndex < _size);
