@@ -7379,8 +7379,12 @@ MonoBehaviour:
   defendersDiscardDeck: []
   playersHand: []
   defendersHand: []
+  defensiveCardValues: 02000000020000000400000005000000
+  aggressiveCardValues: 02000000050000000300000003000000
   setupPhase: 1
   hand: {fileID: 813766131}
+  aggressiveDistanceConstant: 1
+  defensiveDistanceConstant: 1
   cardActivator: {fileID: 0}
   cardTarget: {fileID: 0}
   cardFailed: 0
