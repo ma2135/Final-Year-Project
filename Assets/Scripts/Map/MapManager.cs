@@ -54,7 +54,19 @@ public class MapManager : MonoBehaviour
     private bool unitSelectionFailed;
     private bool unitSelectionInProgress;
 
+    public void SetBoardActive(bool active)
+    {
+        tilemap.gameObject.SetActive(active);
+        collider.gameObject.SetActive(active);
+        overlayContainer.SetActive(active);
+        MouseController.mouseController.HideCursor(active);
+    }
+   
 
+    /// <summary>
+    /// The tile at the input coordinates is left clicked
+    /// </summary>
+    /// <param name="tileCoords"></param>
     public void TileLeftClicked(Vector2Int tileCoords)
     {
         Debug.Log("Tile Clicked");
@@ -72,6 +84,10 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// The tile at the input coordinates is right lcicked
+    /// </summary>
+    /// <param name="tileCoords"></param>
     public void TileRightClicked(Vector2Int tileCoords)
     {
         GameTile selectedTile = gameTiles[tileCoords.x, tileCoords.y];
@@ -82,6 +98,7 @@ public class MapManager : MonoBehaviour
         }
         UnhighlightTiles(highlightedTiles);
     }
+
 
     public void SetPlayerSpawnWidth(int width)
     {
@@ -127,6 +144,11 @@ public class MapManager : MonoBehaviour
         GameManager.gameManager.EquipUnitStart(unitObj);
     }
 
+    /// <summary>
+    /// Create a unit at the input coordinated with the data input
+    /// </summary>
+    /// <param name="matrixCoords"></param>
+    /// <param name="unitData"></param>
     public void CreateUnit(Vector2Int matrixCoords, UnitObject unitData)
     {
         if (matrixCoords == null)
@@ -160,6 +182,12 @@ public class MapManager : MonoBehaviour
     }
 
     #region Unit Movement
+    /// <summary>
+    /// Move a unit from one tile to another
+    /// </summary>
+    /// <param name="unitTile"></param>
+    /// <param name="destinationTile"></param>
+    /// <returns></returns>
     public bool MoveUnit(GameTile unitTile, GameTile destinationTile)
     {
         if (unitTile == null || destinationTile == null)
@@ -177,7 +205,7 @@ public class MapManager : MonoBehaviour
             return false;
         }
 
-        if (!highlightedTiles.Contains(destinationTile))
+        if (!highlightedTiles.Contains(destinationTile) && EncounterManager.encounterManager.playersTurn)
         {
             Debug.Log("Trying to move to unhighlighted tile");
             return false;
@@ -208,6 +236,12 @@ public class MapManager : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Returns an optimum path from the start tile to the destination tile
+    /// </summary>
+    /// <param name="startTile"></param>
+    /// <param name="destinationTile"></param>
+    /// <returns></returns>
     // https://www.redblobgames.com/pathfinding/a-star/introduction.html
     public Stack<GameTile> GetPathToTile(GameTile startTile, GameTile destinationTile)
     {
@@ -225,7 +259,6 @@ public class MapManager : MonoBehaviour
         // Change to true A*
         // Give each node a priority (path newCost) on the way through
         // On way back, next node is the one with the lowest priority
-
 
         PriorityQueue<GameTile, float> fringe = new PriorityQueue<GameTile, float>();
         bool found = false;
@@ -261,68 +294,19 @@ public class MapManager : MonoBehaviour
         Stack<GameTile> pathStack = new Stack<GameTile>();
         while (current != startTile)
         {
-            Debug.LogFormat("Adding {0} to stack", current.GetMatrixCoords());
+            //Debug.LogFormat("Adding {0} to stack", current.GetMatrixCoords());
             pathStack.Push(current);
             current = path[current];
         }
 
         Debug.Log(TileArrayToString(TileStackToArray(pathStack)));
         return pathStack;
-
-        /*
-        PriorityQueue<GameTile, float> fringe = new PriorityQueue<GameTile, float>();
-        Stack<GameTile> path = new Stack<GameTile>();
-        bool found = false;
-        GameTile current = startTile;
-        fringe.Enqueue(current, CubicDistance(MatrixToCubic(current.GetMatrixCoords()), MatrixToCubic(destinationTile.GetMatrixCoords())));
-
-        while (!found && fringe.Count > 0)
-        {
-            current = fringe.Dequeue();
-            if (path.Contains(current))
-            {
-                while (path.Peek() == current)
-                {
-                    path.Pop();
-                }
-            }
-            else
-            {
-                path.Push(current);
-            }
-            
-            if (current == destinationTile)
-            {
-                found = true;
-            }
-            else
-            {
-                foreach (GameTile neighbour in GetTilesInRange(current, 1))
-                {
-                    if (!path.Contains(neighbour)  && !neighbour.IsOccupied())
-                    {
-                        fringe.Enqueue(neighbour, CubicDistance(MatrixToCubic(neighbour.GetMatrixCoords()), MatrixToCubic(destinationTile.GetMatrixCoords())));
-                    }
-                }
-            }
-        }
-
-        //&& !QueueContains(fringe, neighbour)          //Check if the tile is already in the stack - may not be needed - stack may already checka dn update priority
-
-        Stack<GameTile> toTravel = new Stack<GameTile>();
-        while (path.Count > 0)
-        {
-            toTravel.Push(path.Pop());
-        }
-        Debug.Log(TileArrayToString(TileStackToArray(toTravel)));
-        return toTravel;
-        */
     }
 
     #endregion
 
     /// <summary>
-    /// Returns a list of tiles about the center neighbour in a specified movement
+    /// Returns a list of tiles around an input tile up to an input range
     /// </summary>
     /// <param name="centerTile"></param>
     /// <param name="range"></param>
@@ -347,7 +331,7 @@ public class MapManager : MonoBehaviour
             {
                 indent = 0;
             }
-            for (int x = Mathf.Max(centerMatrix.x - range, 0) + indent; x <= Mathf.Min(centerMatrix.x + range, gameTiles.GetLength(0) - 1); x++)
+            for (int x = Mathf.Max(Mathf.Max(centerMatrix.x - range, 0) + indent, 0); x <= Mathf.Min(centerMatrix.x + range, gameTiles.GetLength(0) - 1); x++)
             {
                 if (gameTiles[x, y] != null)
                 {
@@ -361,6 +345,13 @@ public class MapManager : MonoBehaviour
         }
         return tiles;
     }
+
+    /// <summary>
+    /// Returns a list of tile coordinates around an input coordinate up to an input range
+    /// </summary>
+    /// <param name="centerTile"></param>
+    /// <param name="range"></param>
+    /// <returns></returns>
     public List<Vector2Int> GetTilesInRange(Vector2Int centerTile, int range)
     {
         Vector2Int centerMatrix = centerTile;
@@ -396,6 +387,10 @@ public class MapManager : MonoBehaviour
         return tiles;
     }
 
+    /// <summary>
+    /// Returns the gameTiles 2D array
+    /// </summary>
+    /// <returns></returns>
     public GameTile[,] GetGameTiles()
     {
         return gameTiles;
@@ -484,6 +479,11 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sets the spawn zone for a given encounter
+    /// </summary>
+    /// <param name="spawnZone"></param>
+    /// <param name="colour"></param>
     public void SetTilesAsSpawn(GameTile[,] spawnZone, Color colour)
     {
         foreach (GameTile tile in spawnZone)
@@ -495,6 +495,10 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Hides the spawn zone used in encounters
+    /// </summary>
+    /// <param name="spawnZone"></param>
     public void HideSpawnZone(GameTile[,] spawnZone)
     {
         foreach (GameTile tile in spawnZone)
@@ -509,6 +513,11 @@ public class MapManager : MonoBehaviour
 
     #region Coordinate Conversion
 
+    /// <summary>
+    /// Converts 2D coordinated to cubic coordinates
+    /// </summary>
+    /// <param name="matrixCoords"></param>
+    /// <returns></returns>
     public Vector3Int MatrixToCubic(Vector2Int matrixCoords)
     {
         // "&1" to get odd or even as works with -ve numbers
@@ -517,6 +526,11 @@ public class MapManager : MonoBehaviour
         return new Vector3Int(q, r, -q - r);
     }
 
+    /// <summary>
+    /// Converts cubic coordinates to 2D coordinates
+    /// </summary>
+    /// <param name="cubicCoords"></param>
+    /// <returns></returns>
     public Vector2Int CubicToMatrix(Vector3Int cubicCoords)
     {
         int x = cubicCoords.x + (cubicCoords.y - (cubicCoords.y & 1)) / 2;
@@ -524,12 +538,24 @@ public class MapManager : MonoBehaviour
         return new Vector2Int(x, y);
     }
 
+    /// <summary>
+    /// Returns the distance between two sets of cubic coordinates
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
     public float CubicDistance(Vector3Int start, Vector3Int end)
     {
         Vector3Int difference = CubicSubtraction(start, end);
         return (Mathf.Abs(difference.x) + Mathf.Abs(difference.y) + Mathf.Abs(difference.z)) / 2;
     }
 
+    /// <summary>
+    /// Subtract one cubic coordinate from another
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
     private Vector3Int CubicSubtraction(Vector3Int a, Vector3Int b)
     {
         return new Vector3Int(a.x - b.x, a.y - b.y, a.z - b.z);
@@ -595,30 +621,6 @@ public class MapManager : MonoBehaviour
     void Start()
     {
         BoundsInt bounds = tilemap.cellBounds;
-
-
-        //tilemap.SetTile(new Vector3Int(0, 0, 0), originTile);
-        //gameTiles = new GameTile[Mathf.Abs(bounds.min.x) + bounds.max.x, Mathf.Abs(bounds.min.y) + bounds.max.y];
-        /*
-        gameTiles = new GameTile[Mathf.Abs(bounds.max.x) + Mathf.Abs(bounds.min.x), Mathf.Abs(bounds.max.y) + Mathf.Abs(bounds.min.y)];
-        Debug.LogFormat("gameTiles shape: [{0}, {1}]", gameTiles.GetLength(0), gameTiles.GetLength(1));
-        Debug.LogFormat("gameTiles min and max: [{0}, {1}]", bounds.min, bounds.max);
-        */
-        //Debug.LogFormat("Tilemap layout: {0}", tilemap.cellLayout);
-
-        /*
-        for (int x = bounds.min.x; x < bounds.max.x; x++)
-        {
-            for (int y = bounds.min.y; y < bounds.max.y; y++)
-            {
-                if (minX > x) { minX = x; }
-                if (minY > y) { minY = y; }
-                if (maxX < x) { maxX = x; }
-                if (maxY < y) { maxY = y; }
-            }
-        }
-        */
-
         Vector2Int offsetVector = new Vector2Int(-bounds.min.x, -bounds.min.y);
         int indent;
         // +ve => tile map to tile array
@@ -632,17 +634,6 @@ public class MapManager : MonoBehaviour
         {
             for (int y = 0; y < gameTiles.GetLength(1); y++)
             {
-                //Debug.LogFormat("Position: [{0}, {1}]", x, y);
-                /*
-                if (y%2 == minY%2)
-                {
-                    indent = -1;
-                }
-                else
-                {
-                    indent = 0;
-                }
-                */
                 Vector3Int tilePos = new Vector3Int(x - offsetVector.x, y - offsetVector.y, 0);
                 if (tilemap.HasTile(tilePos))
                 {
@@ -661,13 +652,13 @@ public class MapManager : MonoBehaviour
                 }
             }
         }
-
-        //CreateNewUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
-        //CreateNewUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
+        SetBoardActive(false);
         //CreateNewUnit(new Vector2Int(Random.Range(0, Mathf.Abs(bounds.min.x) + bounds.max.x - 1), Random.Range(0, Mathf.Abs(bounds.min.y) + bounds.max.y - 1)));
     }
 
-
+    /// <summary>
+    /// Create a random unit at a random set of coordinates
+    /// </summary>
     public void CreateRandomUnit()
     {
         //Debug.LogAssertionFormat("gameTiles == null: {0}", gameTiles == null);
@@ -695,17 +686,20 @@ public class MapManager : MonoBehaviour
         CreateNewUnit(tile.GetMatrixCoords());
     }
 
+    /// <summary>
+    /// Creates a test encounter
+    /// </summary>
     public void StartTestEncounter()
     {
         EncounterManager.encounterManager.CreateEncounter(GameManager.gameManager.GetPlayerParty(), GameManager.gameManager.GetRandomParty(), (EnemyType)Random.Range(0, Enum.GetNames(typeof(CardType)).Length));
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
+    /// <summary>
+    /// Allows the player to select a unit from the input units
+    /// </summary>
+    /// <param name="unitList"></param>
+    /// <param name="target"></param>
+    /// <returns></returns>
     public IEnumerator SelectFromUnits(List<UnitObject> unitList, bool target)
     {
         string text = "";

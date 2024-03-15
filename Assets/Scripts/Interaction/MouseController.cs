@@ -8,11 +8,18 @@ using UnityEngine.InputSystem;
 
 public class MouseController : MonoBehaviour
 {
+    public static MouseController mouseController;
     [SerializeField] Camera _mainCamera;
-    // Start is called before the first frame update
-    void Start()
+
+    private void Start()
     {
-        
+        mouseController = this;
+    }
+
+    public void HideCursor(bool active)
+    {
+        gameObject.GetComponent<SpriteRenderer>().enabled = active;
+        gameObject.SetActive(active);
     }
 
     // Update is called once per frame

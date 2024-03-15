@@ -53,10 +53,16 @@ public class EncounterManager : MonoBehaviour
         defensiveDistanceConstant = GameManager.DEFENSIVE_TILE_DISTANCE;
     }
 
-
+    /// <summary>
+    /// Create an encounter between the player and an input enemy party
+    /// </summary>
+    /// <param name="player"></param>
+    /// <param name="defenders"></param>
+    /// <param name="enemyType"></param>
     public void CreateEncounter(Party player, Party defenders, EnemyType enemyType)
     {
         Debug.Log("========== STARTING ENCOUNTER ==========");
+        MapManager.mapManager.SetBoardActive(true);
         playersHand = new CardObject[GameManager.gameManager.playerDrawSize];
         defendersHand = new CardObject[GameManager.gameManager.playerDrawSize];
         //spawn player on the left
@@ -197,26 +203,11 @@ public class EncounterManager : MonoBehaviour
 
     }
 
-    /*
-    private void DrawCard(DeckObject deck, int drawAmount)
-    {
-        for (int i = 0; i <= drawAmount; i++)
-        {
-            if (deck.GetDeckSize() == 0)
-            {
-                DiscardToDeck(playersTurn);
-                if (deck.GetDeckSize() == 0)
-                {
-                    Debug.LogErrorFormat("Did not add discard pile to deck");
-                }
-            }
-
-            StartCoroutine(UIManager.uiManager.SetCardToPosition(deck));
-        }
-    }
-    */
-
     #region Deck Management
+    /// <summary>
+    /// Discard a card
+    /// </summary>
+    /// <param name="card"></param>
     public void DiscardCard(CardObject card)
     {
 
@@ -230,13 +221,17 @@ public class EncounterManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Reshuffle the discard pile to the deck
+    /// </summary>
+    /// <param name="player"></param>
     private void DiscardToDeck(bool player)
     {
         if (player)
         {
             playersDeck.EnqueueFromDiscard(playersDiscardDeck);
             playersDiscardDeck.Clear();
-            // playersDeck.Shuffle();
+             playersDeck.Shuffle();
             // shuffle discard deck before adding back to hand queue
         }
         else
@@ -300,7 +295,7 @@ public class EncounterManager : MonoBehaviour
         hand[nextCard] = card;
         StartCoroutine(UIManager.uiManager.SetCardToPosition(card, nextCard));
         return card;
-        //Set cards to hand positions
+        //Set emptyCards to hand positions
         //UiManager.uiManager.SetCardToPosition() 
 
     }
@@ -605,15 +600,13 @@ public class EncounterManager : MonoBehaviour
 
         if (unit.health < 0)
         {
-            Debug.LogFormat("unit: {0} | player's party: {1}", unit.name, unit.playerUnit);
+            Debug.LogFormat("({0}) was killed | player's party: {1}", unit.name, unit.playerUnit);
             if (unit.playerUnit)
             {
-                Debug.LogFormat("players party");
                 playerParty.KillUnit(unit);
             }
             else
             {
-                Debug.LogFormat("defenders party");
                 defenders.KillUnit(unit);
             }
         }
@@ -649,7 +642,7 @@ public class EncounterManager : MonoBehaviour
     #endregion
 
     /// <summary>
-    /// Creates a graph of all possible card plays and unit moves (unit no more cards can be played)
+    /// Creates a graph of all possible card plays and unit moves (unit no more emptyCards can be played)
     /// </summary>
     /// <param name="previousMove"></param>
     /// <param name="cardIndex"></param>
@@ -659,8 +652,15 @@ public class EncounterManager : MonoBehaviour
     /// <returns></returns>
     public void BuildPossibleMoveGraph(PossibleMove previousMove, int cardIndex, CardObject[] hand, bool player, int actions)
     {
+        Debug.LogFormat("Actions left: {0} | Card playing: {1}", actions, hand[cardIndex].cardName);
+
+        //Connect new move to previous move
+
+        //Look at possible future moves
+
+
         CardObject card = hand[cardIndex];
-        if (card.cost < actions)
+        if (card.cost > actions)
         {
             return;
         }
@@ -668,24 +668,35 @@ public class EncounterManager : MonoBehaviour
 
         //get possibleActivators that can be targeted with the card taking movement into account
         List<UnitObject> possibleActivators = GetPossibleActivatorUnits(card, player);
+        Debug.LogAssertionFormat("{0} units can use the ({1}) card", possibleActivators.Count, card.cardName);
         PossibleMove newMove;
+        int unitCount = 0;
         foreach(UnitObject unit in possibleActivators)
         {
+            Debug.LogAssertionFormat("Checking unit {0}", unitCount);
+            //List of all coordinates that the unit can move to
             List<Vector2Int> movesList = MapManager.mapManager.GetTilesInRange(unit.GetCoords(), unit.GetMovementRange());
             //List of all tiles that can be targetted
-            List <Vector2Int> vectorList = MapManager.mapManager.GetTilesInRange(unit.GetCoords(), unit.GetMovementRange() + card.range);
+            List <Vector2Int> targetList = MapManager.mapManager.GetTilesInRange(unit.GetCoords(), unit.GetMovementRange() + card.range);
             List<GameTile> tileList = new List<GameTile>();
-            foreach (Vector2Int vector in vectorList)
+            foreach (Vector2Int vector in targetList)
             {
                 tileList.Add(gameTiles[vector.x, vector.y]);
             }
             //Get targets from list of targettable tiles
             List<UnitObject> possibleTargets = GetPossibleTargetUnits(tileList, card, player);
-            // Finds where the unit can move to to activate the card on the target
+            //Finds where the unit can move to to activate the card on the target
             foreach (UnitObject target in possibleTargets)
             {
+                //If target is out of range of unit, do nothing
+                if (!targetList.Contains(target.GetCoords()))
+                {
+                    break;
+                }
+                //List of tiles around enemy
                 List<Vector2Int> targetRangeVector = MapManager.mapManager.GetTilesInRange(target.GetCoords(), card.range);
                 List<Vector2Int> possibleMoveVector = new List<Vector2Int>();
+                //Creates list of all tiles the unit can move to that allow it to use the card's affect on the target
                 foreach (Vector2Int vector in targetRangeVector)
                 {
                     if (movesList.Contains(vector))
@@ -693,12 +704,14 @@ public class EncounterManager : MonoBehaviour
                         possibleMoveVector.Add(vector);
                     }
                 }
+                //The coords and value for the best tile to move to
                 float[] temp = GetBestCardUseTile(possibleMoveVector, gameTiles[unit.GetCoords().x, unit.GetCoords().y], gameTiles[target.GetCoords().x, target.GetCoords().y]);
                 newMove = new PossibleMove(previousMove, unit, target, card, hand, gameTiles[(int)temp[0], (int)temp[1]], GetCardPriority(card) + temp[2]);
                 Debug.LogFormat("Adding new move to move graph");
                 newMove.DisplayMove();
                 // possibleMoveVector is a list of moves against all possible targets. These moves have the best move locations for targetting that target
                 possibleMoves.Add(newMove);
+                previousMove.connectedMoves.Add(new MoveVertex(previousMove, newMove));
             }
                 // best tile for that target
             //if enemy on tile, add possible moves
@@ -769,7 +782,7 @@ public class EncounterManager : MonoBehaviour
     {
         // base card priority + amount of that affect (e.g. damageAmount)
         float output = baseCardValues[(int)card.GetCardType()];
-        int cardEffect = 0;
+        float cardEffect = 0;
         switch (card.GetCardType())
         {
             case CardType.Attack:
@@ -782,7 +795,15 @@ public class EncounterManager : MonoBehaviour
                 cardEffect = card.shieldAmount;
                 break;
             case CardType.DrawCard:
-                cardEffect = 2 * card.drawAmount;
+                int emptyCards = 0;
+                foreach (CardObject playableCard in defendersHand)
+                {
+                    if (playableCard != null)
+                    {
+                        emptyCards++;
+                    }
+                }
+                cardEffect = 1.25f * emptyCards;
                 break;
         }
         output += 0.5f * cardEffect;
@@ -790,7 +811,7 @@ public class EncounterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Sets how important the AI thinks different cards are. Changes with different personalities
+    /// Sets how important the AI thinks different emptyCards are. Changes with different personalities
     /// </summary>
     /// <returns></returns>
     private int[] GetBaseCardValues()
@@ -809,20 +830,22 @@ public class EncounterManager : MonoBehaviour
     private IEnumerator AITurn()
     {
         Debug.LogAssertionFormat("Starting AI turn");
-        // Get values for all cards in hand
-        // Order cards (ordered list?, Priority queue?)
+        // Get values for all emptyCards in hand
+        // Order emptyCards (ordered list?, Priority queue?)
         // 
         // Get possible possibleActivators for each card
-        // order cards based on distances to player and AI possibleActivators
+        // order emptyCards based on distances to player and AI possibleActivators
 
-        // Reorder after each card played (unit movement may mean some cards cannot be played)
-
+        // Reorder after each card played (unit movement may mean some emptyCards cannot be played)
+        /*
         PriorityQueue<CardObject, float> baseQueue = new PriorityQueue<CardObject, float>();
         foreach (CardObject card in defendersHand)
         {
             baseQueue.Enqueue(card, baseCardValues[((int)card.GetCardType())]);
         }
+        */
         PossibleMove rootNode = new PossibleMove(null, null, null, null, defendersHand, null, 0);
+        rootNode.rootNode = true;
         CardObject[] tempHand = new CardObject[defendersHand.Length];
         defendersHand.CopyTo(tempHand, 0);
         Debug.LogFormat("Building possible moves graph");
@@ -830,6 +853,7 @@ public class EncounterManager : MonoBehaviour
         {
             BuildPossibleMoveGraph(rootNode, i, rootNode.hand, false, enemyActions);
         }
+        Debug.LogAssertionFormat("Nodes connected to root: {0}", rootNode.connectedMoves.Count);
         Debug.LogFormat("Searching possible moves graph");
         Queue<PossibleMove> possibleMoves = ExpandMove(rootNode);
         PossibleMove move;
@@ -855,7 +879,11 @@ public class EncounterManager : MonoBehaviour
         List<PossibleMove> fringe = new List<PossibleMove>();
         Queue<PossibleMove> moveQueue = new Queue<PossibleMove>();
         moveQueue.Enqueue(move);
-        foreach(MoveVertex vertex in move.connectedMoves)
+        if (move.connectedMoves.Count == 0)
+        {
+            Debug.LogAssertion("No more nodes to expand");
+        }
+        foreach(MoveVertex vertex in move.connectedMoves)   
         {
             if (vertex != null)
             {
@@ -905,6 +933,7 @@ public class EncounterManager : MonoBehaviour
 
 public class PossibleMove
 {
+    public bool rootNode = false;
     public UnitObject unit;
     public UnitObject target;
     public CardObject card;
@@ -915,7 +944,7 @@ public class PossibleMove
     public float priority;
 
     public MoveVertex previousMoveVertex;
-    public List<MoveVertex> connectedMoves;
+    public List<MoveVertex> connectedMoves = new List<MoveVertex>();
 
     public PossibleMove(PossibleMove previousMove, UnitObject unit, UnitObject target, CardObject card, CardObject[] hand, GameTile destinationTile, float value)
     {
@@ -933,37 +962,73 @@ public class PossibleMove
 
     public void PlayMove()
     {
-        //Move unit to tile
-        MapManager.mapManager.MoveUnit(MapManager.mapManager.GetGameTiles()[unit.GetCoords().x, unit.GetCoords().y], destinationTile);
+        if (rootNode)
+        {
+            Debug.Log("Root node reached");
+            return;
+        }
+        if (unit != null || destinationTile != null || card != null)
+        {
+            //Move unit to tile
+            MapManager.mapManager.MoveUnit(MapManager.mapManager.GetGameTiles()[unit.GetCoords().x, unit.GetCoords().y], destinationTile);
 
-        //Play card
-        card.PlayCardEffect(unit, target);
+            //Play card
+            card.PlayCardEffect(unit, target);
 
-        //Discard the card
-        EncounterManager.encounterManager.DiscardCard(card);
+            //Discard the card
+            EncounterManager.encounterManager.DiscardCard(card);
+        } 
+        else
+        {
+            Debug.Log("Cannot playt move. No unit, target or card");
+        }
     }
 
 
     public void DisplayMove()
     {
-        string hand = "[";
-        for (int i = 0; i < this.hand.Length; i++)
+        if (rootNode)
         {
-            if (this.hand[i] != null)
-            {
-                hand += this.hand[i].cardName;
-            }
-            else
-            {
-                hand += "null";
-            }
-            if (i != this.hand.Length - 1)
-            {
-                hand += ", ";
-            }
+            Debug.Log("Root node reached");
+            return;
         }
-        hand += "]";
-        Debug.LogFormat("Displaying possible move\nCard: {0} || Hand after card: {1}\nUnit: {2} || Target: {3}", card.name.ToString(), hand, unit.name, target.name);
+
+        if (this.hand != null)
+        {
+            string hand = "[";
+            for (int i = 0; i < this.hand.Length; i++)
+            {
+                if (this.hand[i] != null)
+                {
+                    hand += this.hand[i].cardName;
+                }
+                else
+                {
+                    hand += "null";
+                }
+                if (i != this.hand.Length - 1)
+                {
+                    hand += ", ";
+                }
+            }
+            hand += "]";
+        }
+        if (card == null)
+        {
+            Debug.Log("Cannot display move, card is null");
+        }
+        else if (unit == null)
+        {
+            Debug.Log("Cannot display move, card is null");
+        }
+        else if (target == null)
+        {
+            Debug.Log("Cannot display move, card is null");
+        }
+        else
+        {
+            Debug.LogFormat("Displaying possible move\nCard: {0} || Hand after card: {1}\nUnit: {2} || Target: {3}", card.name.ToString(), hand, unit.name, target.name);
+        }
     }
 }
 
