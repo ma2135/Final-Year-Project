@@ -1,2 +1,3 @@
 # Final-Year-Project
- Final year unity game project
+ Final year Unity game project called "Baron's Blight".
+ For class diagram, see "Class Diagram.pdf"
